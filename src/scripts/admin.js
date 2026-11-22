@@ -180,12 +180,11 @@ const screens = {
     const chips = [['all', 'All'], ['low', 'Low or out'], ['out', 'Out of stock'], ['bases', 'Blank bases'], ['pers', 'Personalised'], ['hamper', 'Hamper pieces'], ['hidden', 'Hidden']]
       .map(([k, n]) => `<button data-filter="${k}" aria-pressed="${f === k}">${n}</button>`).join('');
     shown = list.map(p => p.id);
-    return { title: selecting ? (selected.size ? `${selected.size} selected` : 'Select products') : 'Products', action: selecting ? ['Cancel', 'select-off'] : ['Select', 'select-on'], html: `
+    return { title: selecting ? (selected.size ? `${selected.size} selected` : 'Select products') : 'Products', action: selecting ? ['Cancel', 'select-off'] : ['Select', 'select-on'], add: !selecting, html: `
       <div class="adm-search"><input type="search" id="find" placeholder="Search products" value="${esc(q.get('s') || '')}" aria-label="Search products" enterkeyhint="search">
         <div class="adm-chips" data-for="products">${chips}</div></div>
       ${selecting ? `<p class="adm-help" style="margin:4px 4px 10px">Tap products to select them. <button class="adm-btn ghost" data-action="select-all" style="min-height:36px;padding:0 6px;color:var(--red-ink)">Select all ${list.length}</button></p>` : ''}
-      ${list.length ? `<ul class="adm-list${selecting ? ' adm-selecting' : ''}">${list.map(quickCard).join('')}</ul>` : '<div class="adm-empty">No products match.</div>'}
-      ${selecting ? '' : '<a class="adm-fab" href="#/products/new" aria-label="Add a product"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg><span>Add product</span></a>'}` };
+      ${list.length ? `<ul class="adm-list${selecting ? ' adm-selecting' : ''}">${list.map(quickCard).join('')}</ul>` : '<div class="adm-empty">No products match.</div>'}` };
   },
 
   product(id) {
@@ -381,13 +380,13 @@ function route(keepScroll = false) {
   $('#title').textContent = view.title;
   if (view.title === 'Blank bases') view.action = null;
   $('#topAction').hidden = !view.action;
+  $('#topAdd').hidden = !view.add;
   if (view.action) { $('#topAction').textContent = view.action[0]; $('#topAction').dataset.action = view.action[1]; }
   $('#bulkBar').hidden = !selecting; $('.adm-tabs').hidden = selecting; $('#app').classList.toggle('bulk-on', selecting);
   $('#bulkCount').textContent = `${selected.size} selected`;
   $$('#bulkBar button').forEach(b => { b.disabled = !selected.size; });
   $('#back').hidden = !view.back;
   $('#screen').innerHTML = view.html;
-  $('#app').classList.toggle('fab-on', !!$('#screen .adm-fab'));
   document.querySelectorAll('.adm-tabs a').forEach(a => { if (a.dataset.tab === section) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   lastHash = location.hash;
   setDirty(false);
