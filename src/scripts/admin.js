@@ -79,10 +79,13 @@ const thumb = p => `<div class="adm-thumb">${imgOf(fromRow(p))}</div>`;
 async function loadAll() {
   const [p, e] = await Promise.all([
     sb.from('products').select('*').order('name'),
-    sb.from('enquiries').select('*, enquiry_items(*, products(name), enquiry_hamper_items(qty, product_id, products(name)))').order('created_at', { ascending: false })
+    /* products!enquiry_items_product_id_fkey: enquiry_items reaches products two ways (directly,
+       and through hamper pieces), so the database needs to be told which one is meant. */
+    sb.from('enquiries').select('*, enquiry_items(*, products!enquiry_items_product_id_fkey(name), enquiry_hamper_items(qty, product_id, products(name)))').order('created_at', { ascending: false })
   ]);
-  if (p.error || e.error) { toast(friendly((p.error || e.error).message)); return; }
-  products = p.data; enquiries = e.data;
+  /* Load whatever worked, so one failing list never empties the other. */
+  if (p.error) toast(friendly(p.error.message)); else products = p.data;
+  if (e.error) toast(friendly(e.error.message)); else enquiries = e.data;
   const fresh = enquiries.filter(x => x.status === 'new').length;
   $('#newBadge').hidden = !fresh; $('#newBadge').textContent = fresh;
 }
