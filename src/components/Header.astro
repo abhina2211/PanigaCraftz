@@ -1,0 +1,32 @@
+---
+/* Announcement bar and main menu. The dropdowns are built here from the
+   catalogue, so a new category appears in the menu without touching HTML. */
+import { CATEGORIES, HAMPER_TYPES } from '../data/catalogue.js';
+const caret = '<svg class="caret" viewBox="0 0 10 10"><path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>';
+---
+<div class="bar" id="bar"><span id="announce">Handmade in Sydney. Australia-wide shipping.</span><span class="cd" id="countdown" hidden></span></div>
+<header><nav class="nav" aria-label="Main">
+  <a class="logo" href="/"><img src="/images/logo.png" alt="PanigaCraftz logo"><span>PanigaCraftz<small>Be crafty</small></span></a>
+  <button class="burger" id="burger" aria-expanded="false" aria-controls="menu" aria-label="Menu"><svg width="20" height="20" viewBox="0 0 20 20"><path d="M2 5h16M2 10h16M2 15h16" stroke="currentColor" stroke-width="2"/></svg></button>
+  <ul class="menu" id="menu">
+    <li><a href="/">Home</a></li>
+    <li><button aria-expanded="false" aria-controls="dropProducts" data-drop>Products <Fragment set:html={caret} /></button>
+      <ul class="drop" id="dropProducts">
+        {CATEGORIES.filter(c => c.id !== 'hampers').map(c => (
+          <li><a href={`/#${c.id}`} data-cat={c.id}>{c.name}<small>{c.blurb}</small></a></li>
+        ))}
+        <li><a href="/#shop" data-cat="all">All products<small>Everything in one place</small></a></li>
+      </ul></li>
+    <li><button aria-expanded="false" aria-controls="dropHampers" data-drop>Hampers <Fragment set:html={caret} /></button>
+      <ul class="drop" id="dropHampers">
+        {HAMPER_TYPES.map(h => (
+          <li><a href={`/#hampers-${h.id}`} data-ht={h.id}>{h.name}<small>{h.blurb}</small></a></li>
+        ))}
+        <li><a href="/#build" data-build>Build your own hamper<small>Pick from what's in stock</small></a></li>
+        <li><a href="/#hampers" data-cat="hampers">All hampers<small>Every hamper we make</small></a></li>
+      </ul></li>
+    <li><a href="/#custom">Custom orders</a></li>
+    <li><a href="/#about">About</a></li>
+    <li><a href="#" class="bag" id="openBag">Enquiry list<b id="bagCount">0</b></a></li>
+  </ul>
+</nav></header>

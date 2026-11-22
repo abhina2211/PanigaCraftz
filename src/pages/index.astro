@@ -1,34 +1,24 @@
-<!DOCTYPE html>
-<html lang="en-AU">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PanigaCraftz</title>
-<meta name="description" content="Handmade decoupage planters, candles, gifts and hampers by Neha Koolwal, Sydney. Order on Instagram @panigacraftz_neha.">
-<meta name="theme-color" content="#c0403a">
-<link rel="icon" href="images/logo.png">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css">
-</head>
-<body>
-<div class="bar" id="bar"><span id="announce">Handmade in Sydney. Australia-wide shipping.</span><span class="cd" id="countdown" hidden></span></div>
-<header><nav class="nav" aria-label="Main">
-  <a class="logo" href="#top"><img src="images/logo.png" alt="PanigaCraftz logo"><span>PanigaCraftz<small>Be crafty</small></span></a>
-  <button class="burger" id="burger" aria-expanded="false" aria-controls="menu" aria-label="Menu"><svg width="20" height="20" viewBox="0 0 20 20"><path d="M2 5h16M2 10h16M2 15h16" stroke="currentColor" stroke-width="2"/></svg></button>
-  <ul class="menu" id="menu">
-    <li><a href="#top">Home</a></li>
-    <li><button aria-expanded="false" aria-controls="dropProducts" data-drop>Products <svg class="caret" viewBox="0 0 10 10"><path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
-      <ul class="drop" id="dropProducts"></ul></li>
-    <li><button aria-expanded="false" aria-controls="dropHampers" data-drop>Hampers <svg class="caret" viewBox="0 0 10 10"><path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
-      <ul class="drop" id="dropHampers"></ul></li>
-    <li><a href="#custom">Custom orders</a></li>
-    <li><a href="#about">About</a></li>
-    <li><a href="#" class="bag" id="openBag">Enquiry list<b id="bagCount">0</b></a></li>
-  </ul>
-</nav></header>
+---
+/* Home page. Sections that don't change between visits (categories, Instagram
+   strip, form options) are written into the HTML here at build time. The
+   interactive parts (carousel, shop filters, quick view, hamper builder, custom
+   order form) are filled in by src/scripts/home.js in the browser. */
+import Base from '../layouts/Base.astro';
+import { CATEGORIES, OCCASIONS, FESTIVALS, IG_STRIP } from '../data/catalogue.js';
+import { pic } from '../lib/pictures.js';
 
-<main id="top">
+const igPost = (id, kind = 'p') => `https://www.instagram.com/${kind}/${id}/`;
+const catPhoto = { planters: '/images/planters/CX__oHHB4Pj.jpg', candles: '/images/products/candle-1.jpg' };
+const catPic = { candles: ['#f8e4e4', '#c0403a'], tealights: ['#f3e6dc', '#6e1f24'], vases: ['#f8e4e4', '#c0403a'], jars: ['#f3e6dc', '#c0403a'], decor: ['#e3eaf5', '#c0403a'], hampers: ['#f8e4e4', '#6e1f24'] };
+const occasionOptions = [
+  ...OCCASIONS.map(o => o.name),
+  ...Object.values(FESTIVALS).filter(f => !OCCASIONS.some(o => o.name.startsWith(f.name))).map(f => f.name),
+  'Wedding or engagement', 'Other'
+];
+const festButtons = [['auto', 'Auto (by date)'], ...Object.entries(FESTIVALS).map(([id, f]) => [id, f.name])];
+---
+<Base>
+
 <section class="band hero" aria-roledescription="carousel" aria-label="Featured">
   <div class="wrap">
     <div class="slides" id="slides"></div>
@@ -44,7 +34,14 @@
 <section class="band" id="categories" style="background:var(--soft)"><div class="wrap">
   <h2>Shop by category</h2>
   <p class="lead">Seven handmade ranges. Tap one to see what's in it.</p>
-  <div class="cats" id="cats"></div>
+  <div class="cats" id="cats">
+    {CATEGORIES.map(c => (
+      <a class="cat" href={`/#${c.id}`} data-cat={c.id}>
+        {catPhoto[c.id] ? <img src={catPhoto[c.id]} alt="" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px" /> : <Fragment set:html={pic(c.id, ...catPic[c.id])} />}
+        <b>{c.name}</b><small>{c.blurb}</small>
+      </a>
+    ))}
+  </div>
 </div></section>
 
 <section class="band occ" id="yearend"><div class="wrap">
@@ -54,7 +51,7 @@
     <p style="margin-top:22px"><button class="btn light" data-occ="teacher">Shop teacher gifts</button></p>
   </div>
   <div class="feature">
-    <img src="images/products/candle-2.jpg" alt="The botanical candle in its clear gift box with a satin bow">
+    <img src="/images/products/candle-2.jpg" alt="The botanical candle in its clear gift box with a satin bow">
     <div>
       <h3>Teacher thank-you candle</h3>
       <ul><li>Hand-decoupaged leaf and blossom design</li><li>Gift box, ribbon and thank-you tag included</li><li>Add the teacher's name, or order 3 or 5 for class reps</li></ul>
@@ -77,7 +74,11 @@
 
 <section class="band" id="instagram"><div class="wrap">
   <div class="row-head"><div><h2>From our Instagram</h2><p class="lead">Follow along for new pieces and behind-the-scenes reels.</p></div><a class="btn ghost" href="https://www.instagram.com/panigacraftz_neha/">@panigacraftz_neha</a></div>
-  <div class="igstrip" id="igstrip"></div>
+  <div class="igstrip" id="igstrip">
+    {IG_STRIP.map(x => (
+      <a href={igPost(x.id, x.kind)} aria-label="Open Instagram post"><img src={`/images/planters/${x.id}.jpg`} alt="PanigaCraftz planter on Instagram" loading="lazy" />{x.kind === 'reel' && <span>Reel</span>}</a>
+    ))}
+  </div>
 </div></section>
 
 <section class="band" style="background:var(--soft)"><div class="wrap">
@@ -128,7 +129,7 @@
           <label><input type="radio" name="type" value="Event or party">Event or party</label>
         </div>
         <span class="err" data-for="type" hidden>Choose what you need.</span>
-        <div class="two"><label>Occasion<select name="occasion" id="coOcc"></select></label><label>Quantity<input name="qty" type="number" min="1" max="500" value="1" inputmode="numeric"></label></div>
+        <div class="two"><label>Occasion<select name="occasion" id="coOcc">{occasionOptions.map(o => <option>{o}</option>)}</select></label><label>Quantity<input name="qty" type="number" min="1" max="500" value="1" inputmode="numeric"></label></div>
         <span class="err" data-for="qty" hidden>Enter a quantity from 1 to 500.</span>
         <label>Budget per item<select name="budget"><option value="">Choose a budget</option><option>Under $40</option><option>$40 to $80</option><option>$80 to $150</option><option>$150 and over</option></select></label>
         <span class="err" data-for="budget" hidden>Choose a budget.</span>
@@ -160,19 +161,11 @@
 </div></section>
 
 <section class="band about" id="about"><div class="wrap">
-  <img src="images/logo.png" alt="">
+  <img src="/images/logo.png" alt="">
   <h2>Made by hand, at home in Sydney</h2>
   <p class="lead" style="margin-inline:auto">PanigaCraftz is Neha Koolwal's craft studio. A former lecturer, she started the business six years ago and loves giving colour to plain products. Every piece is decorated by hand using decoupage: paper designs are cut out, layered onto glass, wood, metal or ceramic and sealed with varnish, so no two pieces are exactly the same.</p>
   <p style="margin-top:22px"><a class="btn" href="https://www.instagram.com/panigacraftz_neha/">Follow @panigacraftz_neha</a></p>
 </div></section>
-</main>
-
-<footer class="band"><div class="wrap">
-  <div><h3>PanigaCraftz</h3><p style="margin:0">Handmade decoupage planters, décor, personalised gifts and hampers. Sydney based, shipping Australia-wide (New Zealand on request). Orders by Instagram DM.</p></div>
-  <div><h3>Products</h3><div id="footCats"></div></div>
-  <div><h3>Hampers</h3><div id="footHampers"></div></div>
-  <div><h3>Help</h3><a href="#custom">Custom orders</a><a href="#about">About</a><a href="https://www.instagram.com/panigacraftz_neha/">Instagram</a></div>
-</div></footer>
 
 <dialog class="qview" id="qview" aria-labelledby="qName">
   <div class="qgrid">
@@ -192,29 +185,15 @@
       </div>
       <div class="tags" id="qTags"></div>
       <div class="qact"><div class="qty"><button id="qMinus" aria-label="One fewer">−</button><span id="qQty">1</span><button id="qPlus" aria-label="One more">+</button></div><button class="btn" id="qAdd">Add to enquiry</button></div>
-      <a id="qIg" class="note" style="margin:0" href="#">View on Instagram</a>
+      <p class="note" style="margin:0;display:flex;gap:14px"><a id="qPage" href="#">See full details</a><a id="qIg" href="#">View on Instagram</a></p>
     </div>
   </div>
   <div class="qtop"><button id="qClose" aria-label="Close quick view">×</button></div>
   <div class="qnav"><button id="qPrev" aria-label="Previous product">‹</button><button id="qNext" aria-label="Next product">›</button></div>
 </dialog>
+<div class="fpreview" id="fpreview" aria-label="Festival preview"><p>Festival preview (admin)</p><div id="fbuttons">{festButtons.map(([id, n]) => <button class="chip" data-fprev={id} aria-pressed="false">{n}</button>)}</div></div>
+</Base>
 
-<aside class="drawer" id="drawer" aria-label="Enquiry list">
-  <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="font-size:28px">Enquiry list</h2><button class="x" id="closeBag" aria-label="Close">×</button></div>
-  <ul id="bagList"></ul>
-  <div id="bagFoot">
-    <p class="ship" id="shipMsg"></p><div class="shipbar"><i id="shipBar"></i></div>
-    <div class="totals"><div><span>Subtotal</span><span id="bagSub"></span></div><div><span>Shipping estimate</span><span id="bagShip"></span></div><div class="grand"><span>Estimated total</span><span id="bagTotal"></span></div></div>
-    <button class="btn" id="copyBag" style="width:100%">Copy message for Instagram</button>
-    <a class="btn ghost" style="margin-top:10px;width:100%" href="https://ig.me/m/panigacraftz_neha" id="dmBag">Open Instagram DM</a>
-  </div>
-</aside>
-
-<div class="fpreview" id="fpreview" aria-label="Festival preview"><p>Festival preview (admin)</p><div id="fbuttons"></div></div>
-<div class="toast" id="toast" role="status"></div>
-
-<script src="js/data.js"></script>
-<script src="js/rules.js"></script>
-<script src="js/app.js"></script>
-</body>
-</html>
+<script>
+  import '../scripts/home.js';
+</script>

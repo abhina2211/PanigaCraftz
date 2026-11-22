@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Document version | 1.0 |
+| Document version | 1.1 |
 | Status | Draft, to review with Neha |
 | Owner | Abhi (for Neha Koolwal, PanigaCraftz) |
 | Last updated | 22 Nov 2026 |
@@ -23,7 +23,7 @@ MVP target: **30 Nov 2026**.
 |---|---|---|---|
 | 0. Prototype | Done (22 Nov) | Static site: catalogue in `js/data.js`, enquiry list, custom order form, festival engine | Live in this repo |
 | 1. Rules first | 22 to 24 Nov | The two features below, built in the static site with the rules in `js/rules.js`, and the matching draft database schema in `supabase/schema.sql` | Rules work in the browser and are written down here |
-| 2. Astro move | 24 to 27 Nov | Astro + Tailwind project in the same repo. One product page template generates a page per product. Existing JS becomes components; `rules.js` is imported unchanged. Catalogue still read from a local file. Deploy previews on Cloudflare Pages or Netlify | Every product has its own URL; site matches the prototype |
+| 2. Astro move | Started 22 Nov | Astro + Tailwind project in the same repo. One product page template generates a page per product. Existing JS becomes components; `rules.js` is imported unchanged. Catalogue still read from a local file. Deploy previews on Cloudflare Pages or Netlify | Every product has its own URL; site matches the prototype |
 | 3. Supabase | 27 to 30 Nov | Create the Supabase project (needs Abhi's go-ahead), apply `supabase/schema.sql`, load the catalogue, read products and stock from the database, save enquiries through a server function, simple admin screen for Neha to edit products and stock | Neha can change stock and a hamper respects it without a code change |
 | 4. Payments | Jan 2027 | Stripe Checkout and Australia Post shipping quotes | Customer can pay online |
 
@@ -51,6 +51,16 @@ Word limits set so far (placeholders except where noted; Neha to confirm):
 
 The gift note on the card stays a separate field limited to 150 characters.
 
+### Site structure (Astro move)
+
+| Id | Requirement | Status |
+|---|---|---|
+| REQ-S1 | Every product has its own page at `/products/<name>/`, made from one template, with its own page title, description and preview image for sharing. | Built (v1.1) |
+| REQ-S2 | Product pages offer the same personalisation, word limits and enquiry list as quick view. The enquiry list is shared across all pages. | Built (v1.1) |
+| REQ-S3 | Existing share links keep working: `/#planters`, `/#hampers-festive`, `/#gifts-teacher`, plus `/#build` for the hamper builder. | Built (v1.1) |
+| REQ-S4 | The business rules have automated tests (`npm test`). | Built (v1.1) |
+| REQ-S5 | Work happens on `feature/...` branches taken from `development`; `development` is merged into `main` to go live. | Agreed (v1.1) |
+
 ### Custom hampers
 
 | Id | Requirement | Status |
@@ -75,4 +85,5 @@ The gift note on the card stays a separate field limited to 150 characters.
 
 | Version | Date | Change | Asked by |
 |---|---|---|---|
+| 1.1 | 22 Nov 2026 | Astro move started: page per product (REQ-S1 to S3), rules tests (REQ-S4), branch workflow (REQ-S5). | Abhi |
 | 1.0 | 22 Nov 2026 | First version. Delivery plan; personalisation flag and per-product word limit (REQ-P1 to P5); build-your-own hampers limited to stock (REQ-H1 to H7). | Abhi |
