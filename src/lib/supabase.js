@@ -9,6 +9,10 @@ const url = env.PUBLIC_SUPABASE_URL;
 const key = env.PUBLIC_SUPABASE_ANON_KEY;
 export const supabase = url && key ? createClient(url, key, { auth: { persistSession: false } }) : null;
 
+/* The admin page needs a client that remembers the sign-in between visits. */
+export const isConnected = !!(url && key);
+export const adminClient = () => createClient(url, key, { auth: { persistSession: true, storageKey: 'pc-admin-auth' } });
+
 /* A database row in the shape the rest of the code already uses (see catalogue.js). */
 export function fromRow(r) {
   const d = r.details || {};

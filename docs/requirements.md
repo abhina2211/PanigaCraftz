@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Document version | 1.2 |
+| Document version | 1.3 |
 | Status | Draft, to review with Neha |
 | Owner | Abhi (for Neha Koolwal, PanigaCraftz) |
 | Last updated | 22 Nov 2026 |
@@ -67,10 +67,12 @@ The gift note on the card stays a separate field limited to 150 characters.
 |---|---|---|
 | REQ-D1 | Products, prices, stock and word limits live in Supabase. The site reads them at build time (product pages) and again in the browser (live stock and prices). If Supabase is not set up or can't be reached, the site falls back to the local catalogue file. | Built (v1.2) |
 | REQ-D2 | The website only uses the public (anon) key, which can read active products and submit enquiries, nothing else. The service role key is never used in the website or committed. Keys live in a local `.env` file that is not committed. | Built (v1.2) |
-| REQ-D3 | An enquiry is saved by one database function that checks every rule (word limits, stock, hamper size) and holds hamper stock in the same transaction. If any line fails, nothing is saved. | Built and tested (v1.2); not yet called from the page |
+| REQ-D3 | An enquiry is saved by one database function that checks every rule (word limits, stock, hamper size) and holds hamper stock in the same transaction. If any line fails, nothing is saved. | Built and tested (v1.2); used by REQ-D6 (v1.3) |
 | REQ-D4 | The database starts with the current catalogue, generated from the catalogue file (`npm run seed`). | Built (v1.2) |
-| REQ-D5 | Neha has an admin screen, behind a login, to edit products, prices, stock and word limits and to see enquiries. | Next |
-| REQ-D6 | Customers can send their enquiry list to Neha from the site (name, email, postcode), as well as copying it to Instagram. | Next |
+| REQ-D5 | Neha has an admin screen at `/admin/`, behind an email and password login, to edit prices, stock, status, personalisation, word limits, hamper pieces and whether a product is on the site, and to see enquiries and change their status. Only accounts listed in the `admins` table can see or change anything; the database enforces this, not the page. Cancelling an enquiry returns its hamper stock. Products are hidden, never deleted. | Built (v1.3); adding new products with photos is next |
+| REQ-D6 | Customers can send their enquiry list to Neha from the site (name, email, optional mobile, postcode), as well as copying it to Instagram. They get a reference number and the list is cleared. | Built (v1.3) |
+| REQ-D7 | Neha gets an email when a new enquiry arrives. | Next |
+| REQ-D8 | Neha can add a new product with photos from the admin screen, and the site rebuilds so it gets its own page. | Next |
 
 ### Custom hampers
 
@@ -96,6 +98,7 @@ The gift note on the card stays a separate field limited to 150 characters.
 
 | Version | Date | Change | Asked by |
 |---|---|---|---|
+| 1.3 | 23 Nov 2026 | Admin screen with login and database-enforced admin list (REQ-D5); customers can send enquiries from the site (REQ-D6); email alerts and adding products planned (REQ-D7, D8). | Abhi |
 | 1.2 | 22 Nov 2026 | Supabase connection: live products and stock (REQ-D1), key handling (REQ-D2), all-or-nothing enquiry function (REQ-D3), seed (REQ-D4); admin and sending enquiries planned (REQ-D5, D6). | Abhi |
 | 1.1 | 22 Nov 2026 | Astro move started: page per product (REQ-S1 to S3), rules tests (REQ-S4), branch workflow (REQ-S5). | Abhi |
 | 1.0 | 22 Nov 2026 | First version. Delivery plan; personalisation flag and per-product word limit (REQ-P1 to P5); build-your-own hampers limited to stock (REQ-H1 to H7). | Abhi |
