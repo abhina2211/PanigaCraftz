@@ -1,0 +1,10 @@
+{
+  "name": "PanigaCraftz Admin",
+  "short_name": "PC Admin",
+  "start_url": "/admin/#/home",
+  "scope": "/admin/",
+  "display": "standalone",
+  "background_color": "#fbefee",
+  "theme_color": "#6e1f24",
+  "icons": [{ "src": "/images/logo.png", "sizes": "150x150", "type": "image/png" }]
+}

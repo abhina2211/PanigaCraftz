@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Document version | 1.3 |
+| Document version | 1.4 |
 | Status | Draft, to review with Neha |
 | Owner | Abhi (for Neha Koolwal, PanigaCraftz) |
 | Last updated | 22 Nov 2026 |
@@ -74,6 +74,23 @@ The gift note on the card stays a separate field limited to 150 characters.
 | REQ-D7 | Neha gets an email when a new enquiry arrives. | Next |
 | REQ-D8 | Neha can add a new product with photos from the admin screen, and the site rebuilds so it gets its own page. | Next |
 
+### Admin panel design (for Neha, mostly on her phone)
+
+Modelled on the Shopify mobile app and the WordPress dashboard: a home screen that says what needs doing, lists of big cards, one edit screen per item, and plain words instead of database terms.
+
+| Id | Requirement | Status |
+|---|---|---|
+| REQ-A1 | Phone first. Everything works one-handed on a phone: tap targets at least 48 px, text at least 16 px, a bottom tab bar (Home, Enquiries, Products, More). On a computer the tabs become a left sidebar. | Built (v1.4) |
+| REQ-A2 | Home screen shows what needs attention: number of new enquiries, out-of-stock and running-low products (2 or fewer left), with the newest enquiries and products to restock listed below. Each number opens the matching filtered list. | Built (v1.4) |
+| REQ-A3 | Products list shows a photo, name, price, word limit and a coloured stock label with words (In stock, 2 left, Out of stock, Made to order, Hidden). Search and filter chips: Low or out, Out of stock, Personalised, Hamper pieces, Hidden. | Built (v1.4) |
+| REQ-A4 | Editing a product uses plain questions and switches: price; "Count stock for this product" with + and − buttons; what customers see (automatic, made to order, sold out); "Customers can add a name or message" with the question to ask and the most words allowed; "Can go in custom hampers"; "Show on the website". | Built (v1.4) |
+| REQ-A5 | A save bar appears only when something has changed (Save or Discard). Leaving a screen with unsaved changes asks first. | Built (v1.4) |
+| REQ-A6 | Enquiries list shows customer, reference, how long ago, number of items, estimated total and a status label (New, Confirmed, Done, Cancelled), with filters for each status. | Built (v1.4) |
+| REQ-A7 | An enquiry screen shows the customer with one-tap Email, Call and WhatsApp buttons, every item with its personalisation, hamper contents, packaging and card message, and the next step as a big button (Confirm, then Mark as done; Cancel). Status changes and cancelling ask for confirmation in plain words. | Built (v1.4) |
+| REQ-A8 | The panel can be added to the phone's home screen and opens like an app. The More tab explains how. | Built (v1.4) |
+| REQ-A9 | Database errors are shown as plain sentences ("Stock can't be below 0"), never as codes. | Built (v1.4) |
+| REQ-A10 | A demo mode with made-up data (`/admin/?demo` on the dev server) lets the design be tried without touching real data. It is not in the live site. | Built (v1.4) |
+
 ### Custom hampers
 
 | Id | Requirement | Status |
@@ -98,6 +115,7 @@ The gift note on the card stays a separate field limited to 150 characters.
 
 | Version | Date | Change | Asked by |
 |---|---|---|---|
+| 1.4 | 23 Nov 2026 | Admin panel redesigned for phones and non-technical use (REQ-A1 to A10). | Abhi |
 | 1.3 | 23 Nov 2026 | Admin screen with login and database-enforced admin list (REQ-D5); customers can send enquiries from the site (REQ-D6); email alerts and adding products planned (REQ-D7, D8). | Abhi |
 | 1.2 | 22 Nov 2026 | Supabase connection: live products and stock (REQ-D1), key handling (REQ-D2), all-or-nothing enquiry function (REQ-D3), seed (REQ-D4); admin and sending enquiries planned (REQ-D5, D6). | Abhi |
 | 1.1 | 22 Nov 2026 | Astro move started: page per product (REQ-S1 to S3), rules tests (REQ-S4), branch workflow (REQ-S5). | Abhi |
