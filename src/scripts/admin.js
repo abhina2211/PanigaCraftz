@@ -7,12 +7,20 @@ import { isConnected, adminClient, fromRow } from '../lib/supabase.js';
 import { imgOf } from '../lib/pictures.js';
 
 const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const money = cents => '$' + (cents % 100 ? (cents / 100).toFixed(2) : cents / 100);
 const LOW = 2; /* "running low" means this many or fewer left */
 const CHEVRON = '<svg class="adm-chev" viewBox="0 0 24 24" width="20" height="20"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 2600); }
+/* Short message at the bottom. With an undo function it shows an Undo button for 6 seconds. */
+function toast(t, undo) {
+  const el = $('#toast'), btn = $('#toastUndo');
+  $('#toastText').textContent = t; btn.hidden = !undo;
+  btn.onclick = undo ? () => { el.classList.remove('show'); undo(); } : null;
+  el.classList.add('show'); clearTimeout(toast.t);
+  toast.t = setTimeout(() => el.classList.remove('show'), undo ? 6000 : 2600);
+}
 /* A yes/no question in a proper dialog (big buttons, works on phones). Resolves true for Yes,
    false for the other button or the phone's back/Escape. */
 function ask(text, yes = 'Yes') {
@@ -155,10 +163,12 @@ const screens = {
     const list = products.filter(tests[f] || tests.all).filter(p => !s || p.name.toLowerCase().includes(s) || p.category.includes(s));
     const chips = [['all', 'All'], ['low', 'Low or out'], ['out', 'Out of stock'], ['pers', 'Personalised'], ['hamper', 'Hamper pieces'], ['hidden', 'Hidden']]
       .map(([k, n]) => `<button data-filter="${k}" aria-pressed="${f === k}">${n}</button>`).join('');
-    return { title: 'Products', html: `
+    shown = list.map(p => p.id);
+    return { title: selecting ? (selected.size ? `${selected.size} selected` : 'Select products') : 'Products', action: selecting ? ['Cancel', 'select-off'] : ['Select', 'select-on'], html: `
       <div class="adm-search"><input type="search" id="find" placeholder="Search products" value="${esc(q.get('s') || '')}" aria-label="Search products" enterkeyhint="search">
         <div class="adm-chips" data-for="products">${chips}</div></div>
-      ${list.length ? `<ul class="adm-list">${list.map(productRow).join('')}</ul>` : '<div class="adm-empty">No products match.</div>'}
+      ${selecting ? `<p class="adm-help" style="margin:4px 4px 10px">Tap products to select them. <button class="adm-btn ghost" data-action="select-all" style="min-height:36px;padding:0 6px;color:var(--red-ink)">Select all ${list.length}</button></p>` : ''}
+      ${list.length ? `<ul class="adm-list${selecting ? ' adm-selecting' : ''}">${list.map(quickCard).join('')}</ul>` : '<div class="adm-empty">No products match.</div>'}
       <p class="adm-help" style="margin-top:16px">Adding new products with photos is coming next. For now, ask Abhi.</p>` };
   },
 
@@ -219,26 +229,53 @@ const screens = {
   }
 };
 const enquiryRow = e => `<li><a class="adm-row" href="#/enquiries/${e.id}"><div class="adm-row-main"><b>${esc(e.customer_name)}</b><small>${esc(e.ref)} · ${when(e.created_at)} · ${e.enquiry_items.reduce((s, i) => s + i.qty, 0)} item(s)</small></div><div class="adm-row-end">${statusPill(e.status)}<small>${enquiryTotal(e)}</small></div>${CHEVRON}</a></li>`;
+/* A product card you can edit without opening it (REQ-A11). */
+const quickCard = p => {
+  const tracked = p.stock_qty != null, sel = selected.has(p.id);
+  const head = `<div class="adm-q1">${selecting ? `<span class="adm-check" aria-hidden="true">${sel ? '✓' : ''}</span>` : ''}
+    <a class="adm-qlink" href="#/products/${esc(p.id)}">${thumb(p)}<div class="adm-row-main"><b>${esc(p.name)}</b><small>${esc(p.category)} ${stockPill(p)}</small></div></a>
+    ${selecting ? '' : `<button class="adm-price${p.price_cents == null ? ' none' : ''}" data-q="price" aria-label="Price of ${esc(p.name)}">${p.price_cents == null ? 'On enquiry' : money(p.price_cents)}</button>`}</div>`;
+  if (selecting) return `<li class="adm-qcard${sel ? ' sel' : ''}${p.active ? '' : ' off'}" data-id="${esc(p.id)}" role="checkbox" aria-checked="${sel}" tabindex="0">${head}</li>`;
+  const stock = tracked
+    ? `<div class="adm-mini"><button data-q="stock" data-d="-1" aria-label="One fewer"${p.stock_qty > 0 ? '' : ' disabled'}>−</button><output>${p.stock_qty}</output><button data-q="stock" data-d="1" aria-label="One more">+</button></div>`
+    : `<a class="adm-pchip off" href="#/products/${esc(p.id)}">${p.status === 'made' ? 'Made to order' : 'Not counted'}</a>`;
+  return `<li class="adm-qcard${p.active ? '' : ' off'}" data-id="${esc(p.id)}">${savedFlash === p.id ? '<span class="adm-saved">✓ Saved</span>' : ''}${head}
+    <div class="adm-q2"><div><span class="adm-lab">Stock</span>${stock}</div>
+      <div class="end"><span class="adm-lab">Personalise</span><button class="adm-pchip${p.personalisable ? '' : ' off'}" data-q="pers">✎ ${p.personalisable ? `Up to ${p.personalisation_word_limit} words` : 'Off'}</button></div></div>
+    <div class="adm-q3">
+      ${p.is_hamper_builder ? '<span></span>' : `<label class="adm-sw${tracked ? '' : ' na'}">${tracked ? 'In hampers' : 'Hampers need stock'}<input type="checkbox" data-q="hamper"${p.hamper_eligible ? ' checked' : ''}${tracked ? '' : ' disabled'}></label>`}
+      <label class="adm-sw">On website<input type="checkbox" data-q="active"${p.active ? ' checked' : ''}></label>
+    </div></li>`;
+};
 const productRow = p => `<li><a class="adm-row${p.active ? '' : ' hidden-product'}" href="#/products/${esc(p.id)}">${thumb(p)}<div class="adm-row-main"><b>${esc(p.name)}</b><small>${p.price_cents == null ? 'Price on enquiry' : money(p.price_cents)}${p.personalisable ? ` · up to ${p.personalisation_word_limit} words` : ''}</small></div><div class="adm-row-end">${stockPill(p)}</div>${CHEVRON}</a></li>`;
 
 /* ---------- router ---------- */
 let current = null, dirty = false, lastHash = location.hash;
-function route() {
+let selecting = false, selected = new Set(), shown = [], savedFlash = null;
+/* Redraw the current screen in place (keeps the scroll position). */
+const refresh = () => route(true);
+function route(keepScroll = false) {
   const [path, query = ''] = (location.hash.slice(1) || '/home').split('?');
   const [, section = 'home', id] = path.split('/');
   const q = new URLSearchParams(query);
   const name = id ? { enquiries: 'enquiry', products: 'product' }[section] : section;
   const view = (screens[name] || screens.home)(id && decodeURIComponent(id), q);
   current = { section, name, id, q, view };
+  if (section !== 'products' || id) { selecting = false; selected.clear(); }
   $('#title').textContent = view.title;
+  $('#topAction').hidden = !view.action;
+  if (view.action) { $('#topAction').textContent = view.action[0]; $('#topAction').dataset.action = view.action[1]; }
+  $('#bulkBar').hidden = !selecting; $('.adm-tabs').hidden = selecting; $('#app').classList.toggle('bulk-on', selecting);
+  $('#bulkCount').textContent = `${selected.size} selected`;
+  $$('#bulkBar button').forEach(b => { b.disabled = !selected.size; });
   $('#back').hidden = !view.back;
   $('#screen').innerHTML = view.html;
   document.querySelectorAll('.adm-tabs a').forEach(a => { if (a.dataset.tab === section) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   lastHash = location.hash;
   setDirty(false);
-  if (!id) window.scrollTo(0, 0);
+  if (!id && !keepScroll) window.scrollTo(0, 0);
   const find = $('#find');
-  if (find && q.get('s')) { find.focus(); find.setSelectionRange(find.value.length, find.value.length); }
+  if (find && q.get('s') && !keepScroll) { find.focus(); find.setSelectionRange(find.value.length, find.value.length); }
 }
 function setDirty(v) { dirty = v; $('#saveBar').hidden = !v; }
 window.addEventListener('hashchange', async () => {
@@ -252,8 +289,16 @@ const setQuery = (k, v) => { const q = new URLSearchParams(current.q); if (v && 
 
 /* ---------- interactions ---------- */
 document.addEventListener('click', async e => {
+  const card = selecting && e.target.closest('.adm-qcard');
+  if (card) { e.preventDefault(); const id = card.dataset.id; selected.has(id) ? selected.delete(id) : selected.add(id); refresh(); return; }
   const t = e.target.closest('button,a'); if (!t) return;
   if (t.dataset.filter) { setQuery('f', t.dataset.filter); return; }
+  if (t.dataset.q) { e.preventDefault(); quickAction(t.dataset.q, t.closest('[data-id]').dataset.id, t); return; }
+  if (t.dataset.bulk) { bulkAction(t.dataset.bulk); return; }
+  if (t.dataset.sheet === 'cancel') { $('#sheet').close(); return; }
+  if (t.dataset.action === 'select-on') { selecting = true; selected.clear(); refresh(); return; }
+  if (t.dataset.action === 'select-off') { selecting = false; selected.clear(); refresh(); return; }
+  if (t.dataset.action === 'select-all') { shown.forEach(id => selected.add(id)); refresh(); return; }
   if (t.dataset.step) {
     const input = t.parentElement.querySelector('input');
     const min = Number(input.min || 0), max = Number(input.max || 9999);
@@ -264,6 +309,10 @@ document.addEventListener('click', async e => {
   if (t.dataset.action === 'sign-out') { await sb.auth.signOut(); location.hash = ''; enter(); return; }
   if (t.dataset.action === 'discard') { setDirty(false); route(); return; }
   if (t.dataset.action === 'save') return saveProduct();
+});
+document.addEventListener('change', e => {
+  const q = e.target.dataset.q; if (!q) return;
+  quickAction(q, e.target.closest('[data-id]').dataset.id, e.target);
 });
 let findTimer;
 document.addEventListener('input', e => {
@@ -304,6 +353,118 @@ async function changeStatus(id, status) {
   const { error } = await sb.from('enquiries').update({ status }).eq('id', id);
   if (error) { toast(friendly(error.message)); return; }
   await loadAll(); toast(`Marked as ${STATUS[status][0].toLowerCase()}`); route();
+}
+
+/* ---------- quick edits from the list (REQ-A11..A13) ---------- */
+/* Save straight away, show the change and offer Undo. `before` holds each product as it
+   was, so Undo can put back exactly the fields that changed. */
+const pick = (row, keys) => Object.fromEntries(keys.map(k => [k, row[k]]));
+async function commit(ids, changeFor, message, before) {
+  before = before || Object.fromEntries(ids.map(id => [id, { ...products.find(p => p.id === id) }]));
+  const changes = ids.map(id => [id, changeFor(products.find(p => p.id === id))]).filter(([, c]) => c);
+  if (!changes.length) return;
+  products = products.map(p => { const c = changes.find(([id]) => id === p.id); return c ? { ...p, ...c[1] } : p; });
+  savedFlash = changes.length === 1 ? changes[0][0] : null; refresh();
+  const results = await Promise.all(changes.map(([id, c]) => sb.from('products').update(c).eq('id', id).select()));
+  const failed = results.map((r, i) => (r.error || !r.data?.length) ? [changes[i][0], r.error] : null).filter(Boolean);
+  results.forEach(r => { if (r.data?.[0]) products = products.map(p => p.id === r.data[0].id ? r.data[0] : p); });
+  if (failed.length) {
+    products = products.map(p => { const f = failed.find(([id]) => id === p.id); return f ? before[p.id] : p; });
+    refresh(); toast(failed[0][1] ? friendly(failed[0][1].message) : 'Not saved: this account can\'t make changes.'); return;
+  }
+  refresh(); setTimeout(() => { if (savedFlash) { savedFlash = null; refresh(); } }, 1500);
+  const keys = [...new Set(changes.flatMap(([, c]) => Object.keys(c)))];
+  toast(message, () => commit(changes.map(([id]) => id), p => pick(before[p.id], keys), 'Undone'));
+}
+
+/* Stock taps are gathered for a moment, so tapping + three times saves once ("8 → 11"). */
+const pendingStock = {};
+function stockTap(id, d) {
+  const p = products.find(x => x.id === id);
+  const pend = pendingStock[id] ||= { before: { ...p } };
+  const next = Math.max(0, p.stock_qty + d);
+  products = products.map(x => x.id === id ? { ...x, stock_qty: next } : x); refresh();
+  clearTimeout(pend.timer);
+  pend.timer = setTimeout(() => {
+    delete pendingStock[id];
+    if (pend.before.stock_qty === next) return;
+    commit([id], () => ({ stock_qty: next }), `${p.name} stock: ${pend.before.stock_qty} → ${next}`, { [id]: pend.before });
+  }, 700);
+}
+
+function quickAction(kind, id, el) {
+  const p = products.find(x => x.id === id);
+  if (kind === 'stock') return stockTap(id, Number(el.dataset.d));
+  if (kind === 'active') return commit([id], () => ({ active: el.checked }), `${p.name} ${el.checked ? 'is on the website' : 'is hidden from the website'}`);
+  if (kind === 'hamper') return commit([id], () => ({ hamper_eligible: el.checked }), `${p.name} ${el.checked ? 'can go in hampers' : 'is out of hampers'}`);
+  if (kind === 'price') return priceSheet([id], `${p.name}`, p.price_cents);
+  if (kind === 'pers') return persSheet([id], p.name, p);
+}
+
+/* ---------- bottom sheets ---------- */
+function openSheet(html, onDone) {
+  const d = $('#sheet');
+  $('#sheetBody').innerHTML = html;
+  $('#sheetForm').onsubmit = e => { e.preventDefault(); const r = onDone($('#sheetForm').elements); if (r !== false) d.close(); };
+  d.showModal();
+  const first = d.querySelector('input[type=number],input[type=text]'); if (first) setTimeout(() => first.focus(), 50);
+}
+function priceSheet(ids, title, cents) {
+  openSheet(`<h3 id="sheetTitle">Price</h3><p class="sub">${esc(title)}</p>
+    <label class="f">Price in dollars<input name="price" type="number" inputmode="decimal" min="0" step="0.01" value="${cents == null ? '' : cents / 100}" placeholder="Empty = 'Price on enquiry'"></label>`,
+  f => {
+    const v = f.price.value.trim();
+    if (v !== '' && !(Number(v) >= 0)) { toast('Enter a price of 0 or more'); return false; }
+    const price_cents = v === '' ? null : Math.round(Number(v) * 100);
+    commit(ids, () => ({ price_cents }), `${ids.length > 1 ? ids.length + ' products' : title}: price ${price_cents == null ? 'on enquiry' : money(price_cents)}`);
+  });
+}
+function persSheet(ids, title, p) {
+  const on = p ? p.personalisable : true, words = (p && p.personalisation_word_limit) || 5;
+  openSheet(`<h3 id="sheetTitle">Personalisation</h3><p class="sub">${esc(title)}</p>
+    <label class="adm-sw" style="margin-bottom:12px;font-size:16px">Customers can add a name or message<input type="checkbox" name="on"${on ? ' checked' : ''}></label>
+    <div id="persFields"${on ? '' : ' hidden'}>
+      <label class="f">What to ask the customer<input type="text" name="label" value="${esc((p && p.personalisation_label) || 'Name to add')}"></label>
+      <span class="adm-lab" style="font-size:14px">Most words allowed</span>
+      <div class="adm-presets">${[5, 15, 30, 50].map(n => `<button type="button" data-words="${n}" aria-pressed="${n === words}">${n}</button>`).join('')}</div>
+      <div class="adm-stepper"><button type="button" data-step="-1" aria-label="One fewer word">−</button><input name="words" type="number" inputmode="numeric" min="1" max="200" value="${words}" aria-label="Most words allowed"><button type="button" data-step="1" aria-label="One more word">+</button></div>
+    </div>`,
+  f => {
+    const words = Number(f.words.value);
+    if (f.on.checked && !(words >= 1 && words <= 200)) { toast('Word limit must be between 1 and 200'); return false; }
+    const change = f.on.checked
+      ? { personalisable: true, personalisation_label: f.label.value.trim() || 'Name to add', personalisation_word_limit: words }
+      : { personalisable: false, personalisation_label: null, personalisation_word_limit: null };
+    commit(ids, () => change, `${ids.length > 1 ? ids.length + ' products' : title}: personalising ${f.on.checked ? `on, up to ${words} words` : 'off'}`);
+  });
+}
+$('#sheet').addEventListener('click', e => {
+  const w = e.target.closest('[data-words]');
+  if (w) { $('#sheet [name=words]').value = w.dataset.words; $$('#sheet [data-words]').forEach(b => b.setAttribute('aria-pressed', b === w)); }
+  if (e.target === $('#sheet')) $('#sheet').close(); /* tap outside closes */
+});
+$('#sheet').addEventListener('change', e => { if (e.target.name === 'on') $('#persFields').hidden = !e.target.checked; });
+$('#sheet').addEventListener('input', e => { if (e.target.name === 'words') $$('#sheet [data-words]').forEach(b => b.setAttribute('aria-pressed', b.dataset.words === e.target.value)); });
+
+/* ---------- several products at once (REQ-A13) ---------- */
+function bulkAction(kind) {
+  const ids = [...selected]; if (!ids.length) return;
+  const n = `${ids.length} product${ids.length === 1 ? '' : 's'}`;
+  if (kind === 'hide') return commit(ids, () => ({ active: false }), `${n} hidden from the website`);
+  if (kind === 'show') return commit(ids, () => ({ active: true }), `${n} shown on the website`);
+  if (kind === 'hamper-off') return commit(ids, p => p.is_hamper_builder ? null : { hamper_eligible: false }, `${n} out of hampers`);
+  if (kind === 'hamper-on') {
+    const ok = ids.filter(id => { const p = products.find(x => x.id === id); return p.stock_qty != null && !p.is_hamper_builder; });
+    const skipped = ids.length - ok.length;
+    if (!ok.length) { toast('Set a stock count first: hamper pieces need one'); return; }
+    return commit(ok, () => ({ hamper_eligible: true }), `${ok.length} added to hampers${skipped ? ` (${skipped} skipped: no stock count)` : ''}`);
+  }
+  if (kind === 'price') return priceSheet(ids, n, null);
+  if (kind === 'pers') return persSheet(ids, n, null);
+  if (kind === 'stock') return openSheet(`<h3 id="sheetTitle">Set stock</h3><p class="sub">${n}. Each one gets this many.</p>
+      <div class="adm-stepper"><button type="button" data-step="-1" aria-label="One fewer">−</button><input name="stock" type="number" inputmode="numeric" min="0" step="1" value="1" aria-label="Stock"><button type="button" data-step="1" aria-label="One more">+</button></div>`,
+    f => { const v = Number(f.stock.value); if (!(v >= 0 && Number.isInteger(v))) { toast('Enter a whole number, 0 or more'); return false; }
+      commit(ids, () => ({ stock_qty: v }), `${n}: stock set to ${v}`); });
 }
 
 /* ---------- sign in ---------- */

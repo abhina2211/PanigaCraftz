@@ -53,6 +53,7 @@ import '../../styles/admin.css';
   <header class="adm-top">
     <button class="adm-back" id="back" aria-label="Back" hidden><svg viewBox="0 0 24 24" width="24" height="24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     <h1 id="title">Home</h1>
+    <button class="adm-topbtn" id="topAction" hidden></button>
     <a class="adm-icon" href="/" target="_blank" rel="noopener" aria-label="View website"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
   </header>
 
@@ -65,6 +66,20 @@ import '../../styles/admin.css';
     <button class="adm-btn primary" data-action="save">Save</button>
   </div>
 
+  <!-- Bulk actions: replace the tab bar while products are being selected -->
+  <div class="adm-bulk" id="bulkBar" hidden>
+    <b id="bulkCount">0 selected</b>
+    <div>
+      <button data-bulk="hide">Hide from site</button>
+      <button data-bulk="show">Show on site</button>
+      <button data-bulk="hamper-on">Add to hampers</button>
+      <button data-bulk="hamper-off">Remove from hampers</button>
+      <button data-bulk="stock">Set stock…</button>
+      <button data-bulk="pers">Personalising…</button>
+      <button data-bulk="price">Change price…</button>
+    </div>
+  </div>
+
   <nav class="adm-tabs" aria-label="Admin sections">
     <a href="#/home" data-tab="home"><svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg><span>Home</span></a>
     <a href="#/enquiries" data-tab="enquiries"><svg viewBox="0 0 24 24"><path d="M4 6h16v12H4zM4 7l8 6 8-6"/></svg><span>Enquiries</span><b id="newBadge" hidden></b></a>
@@ -73,7 +88,10 @@ import '../../styles/admin.css';
   </nav>
 </div>
 
-<div class="adm-toast" id="toast" role="status"></div>
+<div class="adm-toast" id="toast" role="status"><span id="toastText"></span><button id="toastUndo" hidden>Undo</button></div>
+<!-- Bottom sheet for quick edits from the list (price, personalisation, bulk values) -->
+<dialog class="adm-sheet" id="sheet" aria-labelledby="sheetTitle"><form method="dialog" id="sheetForm"><div class="adm-grab"></div><div id="sheetBody"></div>
+  <div class="adm-sheet-actions"><button class="adm-btn big" type="button" data-sheet="cancel">Cancel</button><button class="adm-btn primary big" type="submit">Done</button></div></form></dialog>
 <dialog class="adm-dialog" id="confirm"><p id="confirmText"></p><div><button class="adm-btn" value="no" data-close>Keep it</button><button class="adm-btn danger" value="yes" data-close id="confirmYes">Yes</button></div></dialog>
 
 <script>import '../../scripts/admin.js';</script>
