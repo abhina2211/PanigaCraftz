@@ -1,13 +1,13 @@
 /* Product page behaviour: quantity, personalisation with the product's own word
    limit (REQ-P1..P4) and adding to the enquiry list. The rest of the page is plain
    HTML made by Astro from src/pages/products/[slug].astro. */
-import { $, byId, rules, packOptions, currentPackaging, on, addToBag, trackInterest, start } from './core.js';
+import { $, byId, rules, priceText, statusHtml, packOptions, currentPackaging, on, addToBag, trackInterest, start } from './core.js';
 
 const root = $('#product');
-const p = byId(root.dataset.id);
+let p = byId(root.dataset.id);
 let qty = 1;
 
-const pc = rules.persOf(p);
+let pc = rules.persOf(p);
 const buyable = !!$('#pAdd'); /* the build-your-own hamper page links to the builder instead */
 function persInput() {
   if (!pc) return true;
@@ -33,6 +33,14 @@ if (buyable) {
     if (addToBag(p.id, qty, opts) && pc) { $('#pPersText').value = ''; $('#pNote').value = ''; persInput(); }
   };
 }
+
+/* Live price and stock from Supabase (the page itself was built earlier). */
+on('catalogue', () => {
+  p = byId(root.dataset.id) || p; pc = rules.persOf(p);
+  $('#pPrice').textContent = priceText(p); $('#pStatus').innerHTML = statusHtml(p);
+  if (buyable && p.status === 'sold') { $('#pAdd').disabled = true; $('#pAdd').textContent = 'Sold out'; }
+  if ($('#pPersText')) persInput();
+});
 
 start();
 persInput();

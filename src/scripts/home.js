@@ -33,11 +33,12 @@ on('festival', () => {
 });
 
 /* ---------- product cards ---------- */
-const recentIds = [...PRODUCTS].sort((a, b) => b.added - a.added).slice(0, 6).map(p => p.id);
+let recentIds = [];
+const renderRail = () => { recentIds = [...PRODUCTS].sort((a, b) => b.added - a.added).slice(0, 6).map(p => p.id); $('#rail').innerHTML = recentIds.map(id => card(byId(id))).join(''); };
 const card = p => `<article class="p"><div class="img">${imgOf(p)}${p.badge ? `<span class="badge">${esc(p.badge)}</span>` : recentIds.includes(p.id) ? '<span class="badge new">New</span>' : ''}<button class="qv" data-quick="${p.id}" aria-label="Quick view: ${esc(p.name)}">Quick view</button></div>
  <div class="body"><span class="cat-l">${p.ht ? htName(p.ht) : catName(p.cat)}</span><h3><a class="plink" href="${productUrl(p)}">${esc(p.name)}</a></h3>${p.size || p.status ? `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">${statusHtml(p)}${p.size ? `<span class="size">${esc(p.size)}</span>` : ''}</div>` : ''}<p>${esc(p.d.split('. ')[0].replace(/\.$/, ''))}.</p>
  <div class="row"><span class="price"${p.price == null ? ' style="font-size:16px"' : ''}>${priceText(p)}</span>${p.builder ? `<button class="btn" data-build>Build</button>` : `<button class="btn" data-add="${p.id}"${p.status === 'sold' ? ' disabled' : ''}>Add</button>`}</div></div></article>`;
-$('#rail').innerHTML = recentIds.map(id => card(byId(id))).join('');
+renderRail();
 
 /* ---------- shop: filters, price band, sort, shareable hash links ---------- */
 let filter = 'all', ht = null, occ = null, list = [];
@@ -129,7 +130,7 @@ dlg.addEventListener('keydown', e => { if (e.target.matches('input,textarea,sele
 /* ---------- build-your-own hamper: only pieces in stock (REQ-H1..H5) ---------- */
 /* BACKEND HOOK: read stock from the products table; submit through the submit_enquiry
    function, which re-checks and holds the stock in one transaction (supabase/schema.sql). */
-const BUILDER_ID = (PRODUCTS.find(p => p.builder) || {}).id;
+const builderId = () => (PRODUCTS.find(p => p.builder) || {}).id;
 let hb = {}; /* product id -> quantity in the hamper being built */
 const hbItems = () => Object.entries(hb).map(([id, qty]) => ({ id, qty }));
 function renderBuilder() {
@@ -160,7 +161,7 @@ on('bag', renderBuilder);
 const goBuild = () => { closeMenu(); setHash('build'); $('#build').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' }); };
 $('#hbNote').oninput = renderBuilder;
 $('#hbAdd').onclick = () => {
-  if (!BUILDER_ID) return;
+  const BUILDER_ID = builderId(); if (!BUILDER_ID) return;
   const items = hbItems().sort((a, b) => a.id.localeCompare(b.id));
   if (addToBag(BUILDER_ID, 1, { items, packaging: $('#hbPack').value, note: $('#hbNote').value.trim() })) { hb = {}; $('#hbNote').value = ''; renderBuilder(); }
 };
@@ -232,6 +233,7 @@ document.addEventListener('click', e => {
   else if (d.add) { addToBag(d.add, 1, byId(d.add).pers ? { packaging: currentPackaging() } : {}); }
   else if (t.id === 'copyCustom') { copy($('#customOut').textContent); }
 });
+on('catalogue', () => { renderRail(); render(); renderBuilder(); });
 window.addEventListener('hashchange', () => { if (fromHash()) $('#shop').scrollIntoView(); });
 
 /* ---------- start ---------- */
