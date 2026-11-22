@@ -237,3 +237,26 @@ dialog.qview::backdrop{background:rgba(40,12,15,.6)}
 .tags a{text-decoration:none}
 .plink-card{text-decoration:none;color:inherit}
 @media(max-width:800px){.pdp{grid-template-columns:1fr}}
+/* ---- admin page ---- */
+.admin .nav{gap:16px}
+.admin-table-wrap{overflow-x:auto;margin-top:14px;border:1px solid var(--line);border-radius:16px}
+.admin-table{border-collapse:collapse;width:100%;font-size:14px;min-width:1000px}
+.admin-table th{text-align:left;font-size:12px;color:var(--mute);padding:10px 8px;background:var(--soft);position:sticky;top:0}
+.admin-table td{padding:6px 8px;border-top:1px solid var(--line);vertical-align:middle}
+.admin-table td small{display:block;color:var(--mute);font-size:12px}
+.admin-table td a{color:var(--ink);font-weight:700;text-decoration:none}
+.admin-table input,.admin-table select{min-height:36px;padding:6px 8px;font-size:14px;width:100%}
+.admin-table input[type=number]{width:90px}.admin-table input[type=checkbox]{width:18px;height:18px;min-height:0;accent-color:var(--red)}
+.admin-table tr.off td{opacity:.55}
+.admin-table .btn{min-height:36px;padding:0 14px;font-size:13px}
+.enq{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin-top:12px}
+.enq header{display:flex;gap:14px;align-items:center;flex-wrap:wrap;position:static;border:0;background:none}
+.enq header span{color:var(--mute);font-size:14px}.enq header label{margin-left:auto;font-size:13px;display:flex;gap:8px;align-items:center}
+.enq select{min-height:36px;padding:4px 8px}
+.enq p{margin:6px 0}.enq ul{margin:6px 0 0;padding-left:18px}.enq small{display:block;color:var(--mute)}
+#newCount{background:var(--red);color:#fff;border-radius:99px;padding:0 7px;font-size:12px}#newCount:empty{display:none}
+/* send enquiry from the drawer (REQ-D6) */
+.send{display:grid;gap:8px;margin-top:14px;border-top:1px solid var(--line);padding-top:14px}
+.send input{min-height:40px;padding:8px 12px;font-size:15px}
+.send h3{font-size:18px}
+.drawer{overflow-y:auto}.drawer ul{flex:none;min-height:120px}

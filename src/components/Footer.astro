@@ -17,6 +17,14 @@ import { CATEGORIES, HAMPER_TYPES, IG } from '../data/catalogue.js';
     <div class="totals"><div><span>Subtotal</span><span id="bagSub"></span></div><div><span>Shipping estimate</span><span id="bagShip"></span></div><div class="grand"><span>Estimated total</span><span id="bagTotal"></span></div></div>
     <button class="btn" id="copyBag" style="width:100%">Copy message for Instagram</button>
     <a class="btn ghost" style="margin-top:10px;width:100%" href={`https://ig.me/m/${IG}`} id="dmBag">Open Instagram DM</a>
+    <form class="send" id="sendForm" hidden novalidate>
+      <h3>Or send it to Neha from here</h3>
+      <input name="name" autocomplete="name" placeholder="Your name" aria-label="Your name">
+      <input name="email" type="email" autocomplete="email" placeholder="Email" aria-label="Email">
+      <div class="two"><input name="phone" type="tel" autocomplete="tel" placeholder="Mobile (optional)" aria-label="Mobile (optional)"><input name="postcode" inputmode="numeric" maxlength="4" autocomplete="postal-code" placeholder="Postcode" aria-label="Postcode"></div>
+      <p class="err" id="sendErr" hidden></p>
+      <button class="btn" type="submit">Send enquiry</button>
+    </form>
   </div>
 </aside>
 <div class="toast" id="toast" role="status"></div>

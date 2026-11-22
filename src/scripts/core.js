@@ -3,7 +3,7 @@
    Lines marked BACKEND HOOK are where Supabase calls go in phase 3. */
 import { IG, CATEGORIES, HAMPER_TYPES, OCCASIONS, FESTIVALS, PACKAGING_DEFAULT, SHIPPING } from '../data/catalogue.js';
 import * as rules from '../lib/rules.js';
-import { loadLiveProducts } from '../lib/supabase.js';
+import { loadLiveProducts, submitEnquiry, isConnected } from '../lib/supabase.js';
 
 export { rules };
 export const byId = rules.byId;
@@ -140,6 +140,33 @@ document.addEventListener('click', e => {
   else if (t.closest('.menu') && t.tagName === 'A' && !('cat' in d) && !('ht' in d) && !('build' in d)) closeMenu();
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeDrops(); $('#drawer').classList.remove('open'); } });
+
+/* ---------- send the enquiry list to Neha (REQ-D6) ---------- */
+/* The database function re-checks every rule and holds hamper stock; on success the
+   list is cleared and the visitor gets a reference. */
+const sendForm = $('#sendForm');
+sendForm.hidden = !isConnected;
+sendForm.addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = sendForm.elements, err = $('#sendErr');
+  const contact = { name: f.name.value.trim(), email: f.email.value.trim(), phone: f.phone.value.replace(/[\s-]/g, ''), postcode: f.postcode.value.trim() };
+  const problem = contact.name.length < 2 ? 'Enter your name.'
+    : !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(contact.email) ? 'Enter a valid email.'
+    : contact.phone && !/^(\+?61|0)4\d{8}$/.test(contact.phone) ? 'Enter an Australian mobile, e.g. 0412 345 678.'
+    : !/^\d{4}$/.test(contact.postcode) ? 'Enter a 4-digit postcode.' : !bag.length ? 'Add a piece first.' : '';
+  err.textContent = problem; err.hidden = !problem;
+  if (problem) return;
+  const btn = sendForm.querySelector('button'); btn.disabled = true; btn.textContent = 'Sending';
+  try {
+    const ref = await submitEnquiry(contact, bag);
+    bag.forEach(i => trackInterest(i.id, 'enquiry_sent'));
+    bag = []; saveBag(); renderBag(); sendForm.reset();
+    $('#bagList').innerHTML = `<li><div><b>Sent. Your reference is ${esc(ref)}.</b><br>Neha will email you to confirm availability, delivery and the final price.</div></li>`;
+  } catch (x) {
+    err.textContent = /stock/i.test(x.message) ? 'Sorry, a hamper piece just ran out. Please refresh and check your list.' : `Couldn't send: ${x.message}`;
+    err.hidden = false;
+  } finally { btn.disabled = false; btn.textContent = 'Send enquiry'; }
+});
 
 /* Call once per page, after the page has registered its listeners. The page first
    shows the products it was built with, then swaps in live stock, prices and word
