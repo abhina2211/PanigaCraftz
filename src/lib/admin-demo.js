@@ -1,14 +1,14 @@
 /* Demo data for the admin panel (dev server only, open /admin/?demo).
    Behaves like the few Supabase calls admin.js makes, using the catalogue as
    products and a couple of made-up enquiries. Nothing is saved anywhere. */
-import { PRODUCTS } from '../data/catalogue.js';
+import { PRODUCTS, BASES } from '../data/catalogue.js';
 import { persOf } from './rules.js';
 
 export function demoClient() {
   const products = PRODUCTS.map(p => {
     const pers = persOf(p);
     return { id: p.id, slug: p.slug, category: p.cat, name: p.name, price_cents: p.price == null ? null : p.price * 100,
-      status: p.status === 'made' ? 'made' : null, stock_qty: p.stock ?? null, personalisable: !!pers,
+      status: p.fixedStatus ?? null, stock_qty: p.stock ?? null, base_id: p.base ?? null, personalisable: !!pers,
       personalisation_label: pers?.label ?? null, personalisation_word_limit: pers?.words ?? null,
       hamper_eligible: !!p.hamper, is_hamper_builder: !!p.builder, active: true,
       details: { img: p.img, col: p.col } };
@@ -23,15 +23,18 @@ export function demoClient() {
     { id: 'e2', ref: 'PC-3MF8A0', customer_name: 'Tom Nguyen', email: 'tom@example.com', phone: null, postcode: '2000', status: 'confirmed', created_at: ago(30),
       enquiry_items: [{ product_id: 'p1', qty: 2, personalisation_text: null, packaging: null, gift_note: null, products: name('p1'), enquiry_hamper_items: [] }] }
   ];
-  const tables = { products, enquiries };
+  const bases = BASES.map(b => ({ id: b.id, name: b.name, stock_qty: b.stock, active: true }));
+  const tables = { products, enquiries, bases };
   let session = null;
   const query = table => {
-    let rows = tables[table], patch = null, id = null;
+    let rows = tables[table], patch = null, id = null, added = null;
     const q = {
       select() { return q; }, order() { return q; },
       eq(_, v) { id = v; return q; },
       update(p) { patch = p; return q; },
+      insert(r) { added = { active: true, ...r }; return q; },
       then(res) {
+        if (added) { rows.push(added); return res({ data: [added], error: null }); }
         if (patch) { const r = rows.find(x => x.id === id); Object.assign(r, patch); return res({ data: [r], error: null }); }
         return res({ data: rows, error: null });
       }

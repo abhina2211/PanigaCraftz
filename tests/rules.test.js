@@ -47,3 +47,30 @@ test('REQ-H6: 2 to 8 pieces and a card message of up to 30 words', () => {
   assert.ok(!rules.checkHamper([{ id: 'c1', qty: 1 }, { id: 'j2', qty: 1 }], 1, [], null, words(31)).ok);
   assert.equal(rules.hamperPrice([{ id: 'c1', qty: 1 }, { id: 'j2', qty: 2 }]), 15 + 22 + 40);
 });
+
+test('REQ-B2: a design shows in stock, made to order (blanks on its base) or sold out', async () => {
+  const { statusFor } = await import('../src/data/catalogue.js');
+  const bases = [{ id: 'b', stock: 2 }, { id: 'empty', stock: 0 }];
+  assert.equal(statusFor({ stock: 1, base: 'b' }, bases), 'in');
+  assert.equal(statusFor({ stock: 0, base: 'b' }, bases), 'made');
+  assert.equal(statusFor({ stock: 0, base: 'empty' }, bases), 'sold');
+  assert.equal(statusFor({ stock: null }, bases), null);
+  assert.equal(statusFor({ stock: 5, fixedStatus: 'made' }, bases), 'made');
+});
+
+test('REQ-B3/B4: hampers use ready-made first, then blanks shared between designs', async () => {
+  const { PRODUCTS } = await import('../src/data/catalogue.js');
+  const p11 = PRODUCTS.find(p => p.id === 'p11'), p12 = PRODUCTS.find(p => p.id === 'p12');
+  const saved = [p11.hamper, p12.hamper, p11.price, p12.price]; p11.hamper = p12.hamper = true; p11.price = p12.price = 45; // hamper pieces need a price
+  try {
+    // p11: 1 ready-made, p12: 0 ready-made, shared base: 3 blanks
+    assert.equal(rules.available('p11', []), 4);
+    assert.equal(rules.available('p12', []), 3);
+    const bag = [{ key: 'a', id: 'h8', qty: 1, opts: { items: [{ id: 'p11', qty: 2 }] } }]; // 1 ready + 1 blank
+    assert.equal(rules.available('p12', bag), 2);
+    assert.ok(rules.checkHamper([{ id: 'p12', qty: 2 }, { id: 'c1', qty: 1 }], 1, bag).ok);
+    assert.ok(!rules.checkHamper([{ id: 'p12', qty: 3 }, { id: 'c1', qty: 1 }], 1, bag).ok);
+    // two designs in one hamper draw on the same blanks
+    assert.ok(!rules.checkHamper([{ id: 'p11', qty: 3 }, { id: 'p12', qty: 2 }], 1, []).ok);
+  } finally { [p11.hamper, p12.hamper, p11.price, p12.price] = saved; }
+});

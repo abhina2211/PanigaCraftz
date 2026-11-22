@@ -5,7 +5,7 @@
    REQ-P1..P4  per-product personalisation flag and word limit
    REQ-H1..H5  custom hampers may only contain pieces that are in stock
    (see docs/requirements.md) */
-import { PRODUCTS, PERS_DEFAULT, HAMPER_BUILDER } from '../data/catalogue.js';
+import { PRODUCTS, BASES, PERS_DEFAULT, HAMPER_BUILDER } from '../data/catalogue.js';
 
 export const byId = id => PRODUCTS.find(p => p.id === id);
 
@@ -31,45 +31,63 @@ export function checkPers(p, text) {
 }
 
 /* ---------- custom hampers and inventory ---------- */
-/* A piece can go in a custom hamper when it is marked hamper: true and has a stock count. */
-export const hamperEligible = p => !!(p && p.hamper && typeof p.stock === 'number' && p.price != null);
+/* A piece can go in a custom hamper when it is marked hamper: true and has something to
+   count: ready-made stock, or a blank base it can be made on (REQ-H1, REQ-B4). */
+export const hamperEligible = p => !!(p && p.hamper && (typeof p.stock === 'number' || p.base) && p.price != null);
+const baseOf = p => p && p.base ? BASES.find(b => b.id === p.base) : null;
 
-/* Units of each piece already held by custom-hamper lines in the enquiry list
-   (hamper quantity × piece quantity). Lines for single pieces are not counted:
-   those are enquiries Neha confirms herself, and can be made to order. */
-export function hamperUsage(bag, excludeKey) {
-  const used = {};
+/* What is left after the hamper lines in the enquiry list (other than excludeKey) take
+   their pieces: ready-made pieces first, then blanks from the piece's base, the same
+   order the database uses. Lines for single pieces are not counted: those are enquiries
+   Neha confirms herself (REQ-H7). Returns { ready: {productId: n}, blanks: {baseId: n} }. */
+export function stockLeft(bag, excludeKey) {
+  const ready = {}, blanks = {};
+  PRODUCTS.forEach(p => { if (typeof p.stock === 'number') ready[p.id] = p.stock; });
+  BASES.forEach(b => { blanks[b.id] = b.stock; });
   (bag || []).forEach(l => {
     if (l.key === excludeKey || !l.opts || !Array.isArray(l.opts.items)) return;
-    l.opts.items.forEach(it => { used[it.id] = (used[it.id] || 0) + it.qty * l.qty; });
+    l.opts.items.forEach(it => take(it.id, it.qty * l.qty, ready, blanks));
   });
-  return used;
+  return { ready, blanks };
+}
+/* Take n units of a piece from what is left; returns how many could not be found. */
+function take(id, n, ready, blanks) {
+  const p = byId(id);
+  const fromReady = Math.min(ready[id] || 0, n);
+  ready[id] = (ready[id] || 0) - fromReady;
+  let short = n - fromReady;
+  const b = baseOf(p);
+  if (short > 0 && b) { const fromBase = Math.min(blanks[b.id] || 0, short); blanks[b.id] -= fromBase; short -= fromBase; }
+  return short;
 }
 
-/* How many more units of a piece can go into hampers. 0 when not eligible. */
+/* How many more units of a piece can go into hampers: ready-made plus blanks on its base. */
 export const available = (id, bag, excludeKey) => {
   const p = byId(id);
   if (!hamperEligible(p)) return 0;
-  return Math.max(0, p.stock - (hamperUsage(bag, excludeKey)[id] || 0));
+  const { ready, blanks } = stockLeft(bag, excludeKey);
+  const b = baseOf(p);
+  return Math.max(0, (ready[id] || 0) + (b ? blanks[b.id] || 0 : 0));
 };
 
 /* Check a hamper (items = [{id, qty}]) ordered hamperQty times, against stock and the
-   other hamper lines already in the enquiry list. */
+   other hamper lines already in the enquiry list. Designs sharing a base share its blanks. */
 export function checkHamper(items, hamperQty, bag, excludeKey, note) {
   const errors = [];
   const list = (items || []).filter(it => it && it.qty > 0);
   const pieces = list.reduce((s, it) => s + it.qty, 0);
   if (pieces < HAMPER_BUILDER.minItems) errors.push(`Choose at least ${HAMPER_BUILDER.minItems} pieces.`);
   if (pieces > HAMPER_BUILDER.maxItems) errors.push(`A hamper holds up to ${HAMPER_BUILDER.maxItems} pieces.`);
-  const used = hamperUsage(bag, excludeKey);
+  const { ready, blanks } = stockLeft(bag, excludeKey);
   list.forEach(it => {
     const p = byId(it.id);
     if (!Number.isInteger(it.qty)) errors.push('Quantities must be whole numbers.');
     else if (!p) errors.push('A piece in this hamper is no longer sold.');
     else if (!hamperEligible(p)) errors.push(`${p.name} can't go in a custom hamper.`);
     else {
-      const left = Math.max(0, p.stock - (used[it.id] || 0));
-      if (it.qty * hamperQty > left) errors.push(left ? `Only ${left} ${p.name} left in stock.` : `${p.name} is out of stock.`);
+      const b = baseOf(p);
+      const left = (ready[it.id] || 0) + (b ? blanks[b.id] || 0 : 0);
+      if (take(it.id, it.qty * hamperQty, ready, blanks) > 0) errors.push(left ? `Only ${left} ${p.name} left.` : `${p.name} is out of stock.`);
     }
   });
   const nw = wordCount(note);

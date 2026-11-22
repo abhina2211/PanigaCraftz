@@ -29,6 +29,10 @@ Without this step the site runs from `src/data/catalogue.js`. With it, products,
 
 Stock is now changed in Supabase (**Table Editor > products > stock_qty**) until Neha's admin screen is built.
 
+## Blank bases (shared planters)
+
+Run `supabase/bases.sql` once in the SQL editor (after `admin.sql`). It adds the blank-bases table, links the Bluebell and Aztec Stripe planters to a shared 21 cm base (3 blanks, a placeholder), and changes nothing else. Until it is run, the site and admin work as before without bases.
+
 ## Admin access
 
 Neha's admin page is `/admin/` (for example http://localhost:4321/admin/).

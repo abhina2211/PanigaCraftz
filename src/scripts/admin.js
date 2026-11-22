@@ -56,19 +56,28 @@ const when = iso => {
 const demo = (import.meta.env.DEV || import.meta.env.PUBLIC_ADMIN_DEMO === '1') && new URLSearchParams(location.search).has('demo');
 if (!isConnected && !demo) { $('#notConnected').hidden = false; throw new Error('Supabase not connected'); }
 const sb = demo ? (await import('../lib/admin-demo.js')).demoClient() : adminClient();
-let me = null, products = [], enquiries = [];
+let me = null, products = [], enquiries = [], bases = [], basesReady = true;
+/* Products and blank bases live in two tables; quick edits work on either. */
+const rows = { products: () => products, bases: () => bases };
+const setRows = (table, list) => { if (table === 'bases') bases = list; else products = list; };
+const baseOf = p => p.base_id ? bases.find(b => b.id === p.base_id) : null;
+/* Ready-made pieces plus blanks on its base (REQ-B2); null when nothing is counted. */
+const availableOf = p => { const b = baseOf(p); return p.stock_qty == null && !b ? null : (p.stock_qty || 0) + (b ? b.stock_qty : 0); };
 
 /* ---------- plain-language labels shared by the screens ---------- */
 const stockPill = p => {
   if (!p.active) return '<span class="pill off">Hidden</span>';
   if (p.status === 'made') return '<span class="pill info">Made to order</span>';
-  if (p.status === 'sold' || p.stock_qty === 0) return '<span class="pill bad">Out of stock</span>';
-  if (p.stock_qty == null) return ''; /* stock not counted: say nothing rather than add noise */
-  if (p.stock_qty <= LOW) return `<span class="pill warn">${p.stock_qty} left</span>`;
-  return `<span class="pill good">${p.stock_qty} in stock</span>`;
+  if (p.status === 'sold') return '<span class="pill bad">Out of stock</span>';
+  const b = baseOf(p), ready = p.stock_qty || 0;
+  if (ready > 0) return `<span class="pill ${ready <= LOW && !(b && b.stock_qty) ? 'warn' : 'good'}">${ready} ready</span>`;
+  if (b && b.stock_qty > 0) return `<span class="pill info">Made to order · ${b.stock_qty} blank${b.stock_qty === 1 ? '' : 's'}</span>`;
+  if (p.stock_qty == null && !b) return ''; /* stock not counted: say nothing rather than add noise */
+  return '<span class="pill bad">Out of stock</span>';
 };
-const isOut = p => p.active && p.status !== 'made' && (p.status === 'sold' || p.stock_qty === 0);
-const isLow = p => p.active && p.status !== 'made' && p.stock_qty != null && p.stock_qty > 0 && p.stock_qty <= LOW;
+const isOut = p => p.active && p.status !== 'made' && (p.status === 'sold' || availableOf(p) === 0);
+const isLow = p => { const n = availableOf(p); return p.active && p.status !== 'made' && n != null && n > 0 && n <= LOW; };
+const baseLow = b => b.active && b.stock_qty <= LOW;
 const STATUS = { new: ['New', 'warn'], confirmed: ['Confirmed', 'info'], fulfilled: ['Done', 'good'], cancelled: ['Cancelled', 'off'] };
 const statusPill = s => `<span class="pill ${STATUS[s][1]}">${STATUS[s][0]}</span>`;
 const priceOf = id => (products.find(p => p.id === id) || {}).price_cents;
@@ -93,6 +102,9 @@ async function loadAll() {
   ]);
   /* Load whatever worked, so one failing list never empties the other. */
   if (p.error) toast(friendly(p.error.message)); else products = p.data;
+  /* The bases table exists once supabase/bases.sql has been run. */
+  const b = await sb.from('bases').select('*').order('name');
+  basesReady = !b.error; bases = b.error ? [] : b.data;
   if (e.error) toast(friendly(e.error.message)); else enquiries = e.data;
   const fresh = enquiries.filter(x => x.status === 'new').length;
   $('#newBadge').hidden = !fresh; $('#newBadge').textContent = fresh;
@@ -114,7 +126,9 @@ const screens = {
       <h2 class="adm-section-title">Needs a reply <a href="#/enquiries">All enquiries</a></h2>
       ${fresh.length ? `<ul class="adm-list">${fresh.slice(0, 5).map(enquiryRow).join('')}</ul>` : '<div class="adm-card adm-empty">No new enquiries. You\'re all caught up.</div>'}
       ${low.length + out.length ? `<h2 class="adm-section-title">Restock soon <a href="#/products?f=low">See all</a></h2>
-        <ul class="adm-list">${[...out, ...low].slice(0, 5).map(productRow).join('')}</ul>` : ''}` };
+        <ul class="adm-list">${[...out, ...low].slice(0, 5).map(productRow).join('')}</ul>` : ''}
+      ${bases.filter(baseLow).length ? `<h2 class="adm-section-title">Blank bases running low <a href="#/products?f=bases">See all</a></h2>
+        <ul class="adm-list">${bases.filter(baseLow).map(b => `<li><a class="adm-row" href="#/products?f=bases"><div class="adm-row-main"><b>${esc(b.name)}</b><small>Used by ${usedBy(b).length} design(s)</small></div><div class="adm-row-end"><span class="pill ${b.stock_qty ? 'warn' : 'bad'}">${b.stock_qty} blank${b.stock_qty === 1 ? '' : 's'}</span></div>${CHEVRON}</a></li>`).join('')}</ul>` : ''}` };
   },
 
   enquiries(_, q) {
@@ -159,9 +173,10 @@ const screens = {
 
   products(_, q) {
     const f = q.get('f') || 'all', s = (q.get('s') || '').toLowerCase();
+    if (f === 'bases') return basesScreen(q);
     const tests = { all: () => true, low: p => isLow(p) || isOut(p), out: isOut, pers: p => p.personalisable, hamper: p => p.hamper_eligible, hidden: p => !p.active };
     const list = products.filter(tests[f] || tests.all).filter(p => !s || p.name.toLowerCase().includes(s) || p.category.includes(s));
-    const chips = [['all', 'All'], ['low', 'Low or out'], ['out', 'Out of stock'], ['pers', 'Personalised'], ['hamper', 'Hamper pieces'], ['hidden', 'Hidden']]
+    const chips = [['all', 'All'], ['low', 'Low or out'], ['out', 'Out of stock'], ['bases', 'Blank bases'], ['pers', 'Personalised'], ['hamper', 'Hamper pieces'], ['hidden', 'Hidden']]
       .map(([k, n]) => `<button data-filter="${k}" aria-pressed="${f === k}">${n}</button>`).join('');
     shown = list.map(p => p.id);
     return { title: selecting ? (selected.size ? `${selected.size} selected` : 'Select products') : 'Products', action: selecting ? ['Cancel', 'select-off'] : ['Select', 'select-on'], html: `
@@ -192,6 +207,8 @@ const screens = {
           <span class="adm-field">How many do you have ready?</span>
           <div class="adm-stepper"><button type="button" data-step="-1" aria-label="One fewer">−</button><input name="stock" type="number" inputmode="numeric" min="0" step="1" value="${p.stock_qty ?? 0}" aria-label="Stock"><button type="button" data-step="1" aria-label="One more">+</button></div>
         </div>
+        ${basesReady && !p.is_hamper_builder ? `<label class="adm-field">Made on a blank base<select name="base"><option value="">No shared base</option>${bases.map(b => `<option value="${esc(b.id)}"${b.id === p.base_id ? ' selected' : ''}>${esc(b.name)} (${b.stock_qty} blank${b.stock_qty === 1 ? '' : 's'})</option>`).join('')}</select></label>
+          <p class="adm-help">Pick the blank this design is made on. When no ready-made piece is left, customers can still order it while blanks are left; one blank is used per order.</p>` : ''}
         <span class="adm-field">What customers see</span>
         <div class="adm-seg" role="radiogroup" aria-label="Availability">
           <label><input type="radio" name="avail" value="auto"${avail === 'auto' ? ' checked' : ''}>${tracked ? 'In stock / sold out by count' : 'Nothing shown'}</label>
@@ -229,21 +246,63 @@ const screens = {
   }
 };
 const enquiryRow = e => `<li><a class="adm-row" href="#/enquiries/${e.id}"><div class="adm-row-main"><b>${esc(e.customer_name)}</b><small>${esc(e.ref)} · ${when(e.created_at)} · ${e.enquiry_items.reduce((s, i) => s + i.qty, 0)} item(s)</small></div><div class="adm-row-end">${statusPill(e.status)}<small>${enquiryTotal(e)}</small></div>${CHEVRON}</a></li>`;
+/* ---------- blank bases (REQ-B6) ---------- */
+const usedBy = b => products.filter(p => p.base_id === b.id);
+function basesScreen(q) {
+  selecting = false; selected.clear();
+  const chips = [['all', 'All'], ['low', 'Low or out'], ['out', 'Out of stock'], ['bases', 'Blank bases'], ['pers', 'Personalised'], ['hamper', 'Hamper pieces'], ['hidden', 'Hidden']]
+    .map(([k, n]) => `<button data-filter="${k}" aria-pressed="${k === 'bases'}">${n}</button>`).join('');
+  shown = [];
+  const body = !basesReady
+    ? '<div class="adm-card"><h2>Not set up yet</h2><p class="adm-help">Ask Abhi to run supabase/bases.sql in Supabase (see README).</p></div>'
+    : `<p class="adm-help" style="margin:4px 4px 10px">Blank pieces waiting to be decorated. Designs made on a base can be ordered while blanks are left.</p>
+      <ul class="adm-list">${bases.map(b => { const used = usedBy(b); return `<li class="adm-qcard${b.active ? '' : ' off'}" data-id="${esc(b.id)}">${savedFlash === b.id ? '<span class="adm-saved">✓ Saved</span>' : ''}
+        <div class="adm-q1"><div class="adm-row-main"><b>${esc(b.name)}</b><small>${used.length ? 'Used by ' + used.map(p => esc(p.name)).join(', ') : 'No designs linked yet'}</small></div>
+          <button class="adm-pchip off" data-q="base-edit">Edit</button></div>
+        <div class="adm-q2"><div><span class="adm-lab">Blanks ready</span><div class="adm-mini"><button data-q="base-stock" data-d="-1" aria-label="One fewer"${b.stock_qty > 0 ? '' : ' disabled'}>−</button><output>${b.stock_qty}</output><button data-q="base-stock" data-d="1" aria-label="One more">+</button></div></div>
+          <div class="end">${b.stock_qty <= LOW ? `<span class="pill ${b.stock_qty ? 'warn' : 'bad'}">${b.stock_qty ? 'Running low' : 'None left'}</span>` : ''}</div></div></li>`; }).join('')}</ul>
+      <button class="adm-btn primary big" data-action="base-add" style="margin-top:14px">Add a blank base</button>
+      <p class="adm-help" style="margin-top:10px">To link designs: open a product and pick its base, or use Select on the product list.</p>`;
+  return { title: 'Blank bases', html: `<div class="adm-search"><div class="adm-chips" data-for="products">${chips}</div></div>${body}` };
+}
+function baseSheet(b) {
+  openSheet(`<h3 id="sheetTitle">${b ? 'Edit blank base' : 'Add a blank base'}</h3><p class="sub">For example "21 cm planter on timber base"</p>
+    <label class="f">Name<input type="text" name="name" value="${esc(b ? b.name : '')}" required></label>
+    ${b ? '' : `<span class="adm-lab" style="font-size:14px">Blanks ready now</span><div class="adm-stepper"><button type="button" data-step="-1" aria-label="One fewer">−</button><input name="stock" type="number" inputmode="numeric" min="0" step="1" value="0" aria-label="Blanks ready"><button type="button" data-step="1" aria-label="One more">+</button></div>`}
+    ${b ? `<label class="adm-sw" style="margin-top:12px;font-size:16px">In use<input type="checkbox" name="active"${b.active ? ' checked' : ''}></label>` : ''}`,
+  f => {
+    const name = f.name.value.trim();
+    if (name.length < 2) { toast('Give the base a name'); return false; }
+    if (b) return void commit([b.id], () => ({ name, active: f.active.checked }), `Saved ${name}`, null, 'bases');
+    const stock = Number(f.stock.value);
+    if (!(stock >= 0 && Number.isInteger(stock))) { toast('Enter a whole number, 0 or more'); return false; }
+    addBase(name, stock);
+  });
+}
+async function addBase(name, stock_qty) {
+  let id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'base';
+  while (bases.some(b => b.id === id)) id += '-2';
+  const { data, error } = await sb.from('bases').insert({ id, name, stock_qty }).select();
+  if (error || !data?.length) { toast(error ? friendly(error.message) : 'Not saved: this account can\'t make changes.'); return; }
+  bases = [...bases, data[0]].sort((a, b) => a.name.localeCompare(b.name));
+  toast(`Added ${name}`); refresh();
+}
+
 /* A product card you can edit without opening it (REQ-A11). */
 const quickCard = p => {
-  const tracked = p.stock_qty != null, sel = selected.has(p.id);
+  const tracked = p.stock_qty != null, sel = selected.has(p.id), b = baseOf(p), countable = tracked || !!b;
   const head = `<div class="adm-q1">${selecting ? `<span class="adm-check" aria-hidden="true">${sel ? '✓' : ''}</span>` : ''}
     <a class="adm-qlink" href="#/products/${esc(p.id)}">${thumb(p)}<div class="adm-row-main"><b>${esc(p.name)}</b><small>${esc(p.category)} ${stockPill(p)}</small></div></a>
     ${selecting ? '' : `<button class="adm-price${p.price_cents == null ? ' none' : ''}" data-q="price" aria-label="Price of ${esc(p.name)}">${p.price_cents == null ? 'On enquiry' : money(p.price_cents)}</button>`}</div>`;
   if (selecting) return `<li class="adm-qcard${sel ? ' sel' : ''}${p.active ? '' : ' off'}" data-id="${esc(p.id)}" role="checkbox" aria-checked="${sel}" tabindex="0">${head}</li>`;
-  const stock = tracked
-    ? `<div class="adm-mini"><button data-q="stock" data-d="-1" aria-label="One fewer"${p.stock_qty > 0 ? '' : ' disabled'}>−</button><output>${p.stock_qty}</output><button data-q="stock" data-d="1" aria-label="One more">+</button></div>`
+  const stock = tracked || b
+    ? `<div class="adm-mini"><button data-q="stock" data-d="-1" aria-label="One fewer"${p.stock_qty > 0 ? '' : ' disabled'}>−</button><output>${p.stock_qty ?? 0}</output><button data-q="stock" data-d="1" aria-label="One more">+</button></div>`
     : `<a class="adm-pchip off" href="#/products/${esc(p.id)}">${p.status === 'made' ? 'Made to order' : 'Not counted'}</a>`;
   return `<li class="adm-qcard${p.active ? '' : ' off'}" data-id="${esc(p.id)}">${savedFlash === p.id ? '<span class="adm-saved">✓ Saved</span>' : ''}${head}
-    <div class="adm-q2"><div><span class="adm-lab">Stock</span>${stock}</div>
+    <div class="adm-q2"><div><span class="adm-lab">${b ? 'Ready-made' : 'Stock'}</span>${stock}${b ? `<a class="adm-baseline" href="#/products?f=bases">+ ${b.stock_qty} blank${b.stock_qty === 1 ? '' : 's'} (${esc(b.name)})</a>` : ''}</div>
       <div class="end"><span class="adm-lab">Personalise</span><button class="adm-pchip${p.personalisable ? '' : ' off'}" data-q="pers">✎ ${p.personalisable ? `Up to ${p.personalisation_word_limit} words` : 'Off'}</button></div></div>
     <div class="adm-q3">
-      ${p.is_hamper_builder ? '<span></span>' : `<label class="adm-sw${tracked ? '' : ' na'}">${tracked ? 'In hampers' : 'Hampers need stock'}<input type="checkbox" data-q="hamper"${p.hamper_eligible ? ' checked' : ''}${tracked ? '' : ' disabled'}></label>`}
+      ${p.is_hamper_builder ? '<span></span>' : `<label class="adm-sw${countable ? '' : ' na'}">${countable ? 'In hampers' : 'Hampers need stock'}<input type="checkbox" data-q="hamper"${p.hamper_eligible ? ' checked' : ''}${countable ? '' : ' disabled'}></label>`}
       <label class="adm-sw">On website<input type="checkbox" data-q="active"${p.active ? ' checked' : ''}></label>
     </div></li>`;
 };
@@ -263,6 +322,7 @@ function route(keepScroll = false) {
   current = { section, name, id, q, view };
   if (section !== 'products' || id) { selecting = false; selected.clear(); }
   $('#title').textContent = view.title;
+  if (view.title === 'Blank bases') view.action = null;
   $('#topAction').hidden = !view.action;
   if (view.action) { $('#topAction').textContent = view.action[0]; $('#topAction').dataset.action = view.action[1]; }
   $('#bulkBar').hidden = !selecting; $('.adm-tabs').hidden = selecting; $('#app').classList.toggle('bulk-on', selecting);
@@ -299,6 +359,7 @@ document.addEventListener('click', async e => {
   if (t.dataset.action === 'select-on') { selecting = true; selected.clear(); refresh(); return; }
   if (t.dataset.action === 'select-off') { selecting = false; selected.clear(); refresh(); return; }
   if (t.dataset.action === 'select-all') { shown.forEach(id => selected.add(id)); refresh(); return; }
+  if (t.dataset.action === 'base-add') { baseSheet(null); return; }
   if (t.dataset.step) {
     const input = t.parentElement.querySelector('input');
     const min = Number(input.min || 0), max = Number(input.max || 9999);
@@ -321,7 +382,7 @@ document.addEventListener('input', e => {
     const f = $('#editForm').elements;
     $('#stockBox').hidden = !f.tracked.checked;
     $('#persBox').hidden = !f.pers.checked;
-    if (f.hamper && f.hamper.checked && !f.tracked.checked) { f.tracked.checked = true; $('#stockBox').hidden = false; toast('Stock counting turned on: hamper pieces need a count'); }
+    if (f.hamper && f.hamper.checked && !f.tracked.checked && !(f.base && f.base.value)) { f.tracked.checked = true; $('#stockBox').hidden = false; toast('Stock counting turned on: hamper pieces need a count'); }
     setDirty(true);
   }
 });
@@ -337,6 +398,7 @@ async function saveProduct() {
     personalisation_label: f.pers.checked ? (f.label.value.trim() || 'Name to add') : null,
     personalisation_word_limit: f.pers.checked ? num(f.words.value) : null,
     hamper_eligible: f.hamper ? f.hamper.checked : false,
+    ...(f.base ? { base_id: f.base.value || null } : {}),
     active: f.active.checked
   };
   const btn = document.querySelector('[data-action="save"]'); btn.disabled = true; btn.textContent = 'Saving';
@@ -359,42 +421,47 @@ async function changeStatus(id, status) {
 /* Save straight away, show the change and offer Undo. `before` holds each product as it
    was, so Undo can put back exactly the fields that changed. */
 const pick = (row, keys) => Object.fromEntries(keys.map(k => [k, row[k]]));
-async function commit(ids, changeFor, message, before) {
-  before = before || Object.fromEntries(ids.map(id => [id, { ...products.find(p => p.id === id) }]));
-  const changes = ids.map(id => [id, changeFor(products.find(p => p.id === id))]).filter(([, c]) => c);
+async function commit(ids, changeFor, message, before, table = 'products') {
+  const list = () => rows[table]();
+  before = before || Object.fromEntries(ids.map(id => [id, { ...list().find(p => p.id === id) }]));
+  const changes = ids.map(id => [id, changeFor(list().find(p => p.id === id))]).filter(([, c]) => c);
   if (!changes.length) return;
-  products = products.map(p => { const c = changes.find(([id]) => id === p.id); return c ? { ...p, ...c[1] } : p; });
+  setRows(table, list().map(p => { const c = changes.find(([id]) => id === p.id); return c ? { ...p, ...c[1] } : p; }));
   savedFlash = changes.length === 1 ? changes[0][0] : null; refresh();
-  const results = await Promise.all(changes.map(([id, c]) => sb.from('products').update(c).eq('id', id).select()));
+  const results = await Promise.all(changes.map(([id, c]) => sb.from(table).update(c).eq('id', id).select()));
   const failed = results.map((r, i) => (r.error || !r.data?.length) ? [changes[i][0], r.error] : null).filter(Boolean);
-  results.forEach(r => { if (r.data?.[0]) products = products.map(p => p.id === r.data[0].id ? r.data[0] : p); });
+  results.forEach(r => { if (r.data?.[0]) setRows(table, list().map(p => p.id === r.data[0].id ? r.data[0] : p)); });
   if (failed.length) {
-    products = products.map(p => { const f = failed.find(([id]) => id === p.id); return f ? before[p.id] : p; });
+    setRows(table, list().map(p => { const f = failed.find(([id]) => id === p.id); return f ? before[p.id] : p; }));
     refresh(); toast(failed[0][1] ? friendly(failed[0][1].message) : 'Not saved: this account can\'t make changes.'); return;
   }
   refresh(); setTimeout(() => { if (savedFlash) { savedFlash = null; refresh(); } }, 1500);
   const keys = [...new Set(changes.flatMap(([, c]) => Object.keys(c)))];
-  toast(message, () => commit(changes.map(([id]) => id), p => pick(before[p.id], keys), 'Undone'));
+  toast(message, () => commit(changes.map(([id]) => id), p => pick(before[p.id], keys), 'Undone', null, table));
 }
 
 /* Stock taps are gathered for a moment, so tapping + three times saves once ("8 → 11"). */
 const pendingStock = {};
-function stockTap(id, d) {
-  const p = products.find(x => x.id === id);
-  const pend = pendingStock[id] ||= { before: { ...p } };
-  const next = Math.max(0, p.stock_qty + d);
-  products = products.map(x => x.id === id ? { ...x, stock_qty: next } : x); refresh();
+function stockTap(id, d, table = 'products') {
+  const key = table + ':' + id, list = rows[table]();
+  const p = list.find(x => x.id === id);
+  const pend = pendingStock[key] ||= { before: { ...p } };
+  const next = Math.max(0, (p.stock_qty || 0) + d);
+  setRows(table, list.map(x => x.id === id ? { ...x, stock_qty: next } : x)); refresh();
   clearTimeout(pend.timer);
   pend.timer = setTimeout(() => {
-    delete pendingStock[id];
+    delete pendingStock[key];
     if (pend.before.stock_qty === next) return;
-    commit([id], () => ({ stock_qty: next }), `${p.name} stock: ${pend.before.stock_qty} → ${next}`, { [id]: pend.before });
+    const what = table === 'bases' ? `${p.name} blanks` : `${p.name} ${baseOf(p) ? 'ready-made' : 'stock'}`;
+    commit([id], () => ({ stock_qty: next }), `${what}: ${pend.before.stock_qty ?? 0} → ${next}`, { [id]: pend.before }, table);
   }, 700);
 }
 
 function quickAction(kind, id, el) {
   const p = products.find(x => x.id === id);
   if (kind === 'stock') return stockTap(id, Number(el.dataset.d));
+  if (kind === 'base-stock') return stockTap(id, Number(el.dataset.d), 'bases');
+  if (kind === 'base-edit') return baseSheet(bases.find(b => b.id === id));
   if (kind === 'active') return commit([id], () => ({ active: el.checked }), `${p.name} ${el.checked ? 'is on the website' : 'is hidden from the website'}`);
   if (kind === 'hamper') return commit([id], () => ({ hamper_eligible: el.checked }), `${p.name} ${el.checked ? 'can go in hampers' : 'is out of hampers'}`);
   if (kind === 'price') return priceSheet([id], `${p.name}`, p.price_cents);
@@ -454,12 +521,19 @@ function bulkAction(kind) {
   if (kind === 'show') return commit(ids, () => ({ active: true }), `${n} shown on the website`);
   if (kind === 'hamper-off') return commit(ids, p => p.is_hamper_builder ? null : { hamper_eligible: false }, `${n} out of hampers`);
   if (kind === 'hamper-on') {
-    const ok = ids.filter(id => { const p = products.find(x => x.id === id); return p.stock_qty != null && !p.is_hamper_builder; });
+    const ok = ids.filter(id => { const p = products.find(x => x.id === id); return (p.stock_qty != null || p.base_id) && !p.is_hamper_builder; });
     const skipped = ids.length - ok.length;
     if (!ok.length) { toast('Set a stock count first: hamper pieces need one'); return; }
     return commit(ok, () => ({ hamper_eligible: true }), `${ok.length} added to hampers${skipped ? ` (${skipped} skipped: no stock count)` : ''}`);
   }
   if (kind === 'price') return priceSheet(ids, n, null);
+  if (kind === 'base') {
+    if (!basesReady) { toast('Run supabase/bases.sql first (see README)'); return; }
+    return openSheet(`<h3 id="sheetTitle">Made on a blank base</h3><p class="sub">${n}</p>
+      <label class="f">Blank base<select name="base" style="font-size:18px;min-height:52px;border-radius:12px;border:1.5px solid var(--line);padding:0 12px"><option value="">No shared base</option>${bases.map(b => `<option value="${esc(b.id)}">${esc(b.name)}</option>`).join('')}</select></label>`,
+      f => { const base_id = f.base.value || null; const name = base_id ? bases.find(b => b.id === base_id).name : 'no shared base';
+        commit(ids, p => p.is_hamper_builder ? null : { base_id }, `${n}: ${name}`); });
+  }
   if (kind === 'pers') return persSheet(ids, n, null);
   if (kind === 'stock') return openSheet(`<h3 id="sheetTitle">Set stock</h3><p class="sub">${n}. Each one gets this many.</p>
       <div class="adm-stepper"><button type="button" data-step="-1" aria-label="One fewer">−</button><input name="stock" type="number" inputmode="numeric" min="0" step="1" value="1" aria-label="Stock"><button type="button" data-step="1" aria-label="One more">+</button></div>`,
