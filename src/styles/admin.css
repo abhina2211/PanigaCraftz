@@ -163,6 +163,7 @@
 .adm-sw input:checked{background:#2e8b57}.adm-sw input:checked::after{transform:translateX(18px)}
 .adm-sw input:disabled{opacity:.4;cursor:not-allowed}
 .adm-sw.na{color:var(--mute)}
+.adm-baseline{display:block;margin-top:6px;font-size:13px;font-weight:700;color:var(--mute);text-decoration:none}
 .adm-saved{position:absolute;top:8px;right:12px;font-size:12px;font-weight:800;color:#22663d}
 .adm-check{width:28px;height:28px;flex:none;border-radius:8px;border:2px solid #cbbcbc;display:grid;place-items:center;color:#fff;font-weight:900}
 .adm-qcard.sel .adm-check{background:var(--red);border-color:var(--red)}
@@ -195,3 +196,8 @@
 .adm-toast.show{transform:none}
 .adm-app.bulk-on~.adm-toast{bottom:calc(270px + env(safe-area-inset-bottom))}
 @media (min-width:900px){.adm-toast{left:calc(50% - 110px);right:auto;width:440px}}
+.adm-mini{display:inline-flex}.adm-q2 .end{flex:none}
+/* add a product: photo picker */
+.adm-photo{display:grid;place-items:center;min-height:180px;border:2px dashed #d9c4c3;border-radius:16px;background:var(--soft);cursor:pointer;font-weight:800;color:var(--mute);overflow:hidden}
+.adm-photo img{width:100%;max-height:320px;object-fit:cover;display:block}
+.adm-form textarea{width:100%;background:var(--bg);color:var(--ink);font-family:inherit}

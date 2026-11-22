@@ -14,8 +14,9 @@
    size      size text, or ''
    status    'in' (in stock), 'made' (made to order), 'sold' (sold out), or null if unknown.
              When stock is a number and status is not set, status follows stock.
-   stock     units on hand, or null when not counted (REQ-H2). Placeholder counts until Neha confirms.
-   hamper    true if the piece can go in a build-your-own hamper (REQ-H1). Needs a stock count.
+   stock     ready-made pieces on hand, or null when not counted (REQ-H2). Placeholder counts until Neha confirms.
+   base      id of the blank base this design is made on (see BASES), or undefined (REQ-B1)
+   hamper    true if the piece can go in a build-your-own hamper (REQ-H1). Needs a stock count or a base.
    img/img2  photo paths; without a photo a drawn placeholder is used (col = [background, accent])
    pers      false, or the personalisation settings (REQ-P1, REQ-P2):
                true                       default: PERS_DEFAULT (label and word limit)
@@ -99,9 +100,31 @@ export const PERS_DEFAULT = { label: 'Name to add', words: 5 };
 /* Build-your-own hamper (REQ-H1..H5). Fee and limits are placeholders to confirm with Neha. */
 export const HAMPER_BUILDER = { base: 15, minItems: 2, maxItems: 8, noteWords: 30 };
 
+/* Blank bases shared by several designs (REQ-B1). stock = blanks ready to decorate.
+   Placeholder counts until Neha confirms. In Supabase: the bases table. */
+export const BASES = [
+  { id: 'planter-21', name: '21 cm planter on timber base', stock: 3 },
+  { id: 'candle-jar', name: 'Frosted candle jar', stock: 3 },
+  { id: 'glass-vase', name: 'Glass vase', stock: 3 },
+  { id: 'glass-jar', name: 'Clip-top glass jar', stock: 3 }
+];
+
+/* What a product shows (REQ-B2): ready-made pieces first ("In stock"), then blanks on
+   its base ("Made to order"), otherwise "Sold out". A status Neha set by hand wins.
+   Products with no count and no base show nothing. */
+export function statusFor(p, bases = BASES) {
+  if (p.fixedStatus) return p.fixedStatus;
+  const base = p.base && bases.find(b => b.id === p.base);
+  if (typeof p.stock === 'number' && p.stock > 0) return 'in';
+  if (base && base.stock > 0) return 'made';
+  if (typeof p.stock === 'number' || base) return 'sold';
+  return null;
+}
+
 const P = (o) => {
   const p = Object.assign({ price: null, size: '', status: null, stock: null, hamper: false, pers: false, occ: [], fest: [], added: 0, sample: true }, o);
-  if (typeof p.stock === 'number' && !p.status) p.status = p.stock > 0 ? 'in' : 'sold';
+  p.fixedStatus = p.status;
+  p.status = statusFor(p);
   p.slug = p.slug || p.name.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   return p;
 };
@@ -120,22 +143,22 @@ export const PRODUCTS = [
  P({ id:'p8', cat:'planters', name:'Vintage Bouquet Mini Planter', d:'A petite vintage bouquet planter, the perfect stocking filler or Kris Kringle gift.', price:35, size:'11 × 10 cm', stock:3, hamper:true, pers:true, img:PL('CVEi430hYq_'), ig:'CVEi430hYq_', badge:'Under $40', occ:['christmas','teacher'], fest:['christmas'], added:14 }),
  P({ id:'p9', cat:'planters', name:'Leafy Raised Planter', d:'Blue leaf decoupage on a raised timber base.', img:PL('Ca8K_iDB095'), ig:'Ca8K_iDB095', occ:['housewarming'], added:20 }),
  P({ id:'p10',cat:'planters', name:'Line-Art Faces Stand Planter', d:'Modern line-art faces on a planter with a wooden stand.', img:PL('CaYI2OVBAaf'), ig:'CaYI2OVBAaf', occ:['housewarming','birthday'], added:21 }),
- P({ id:'p11',cat:'planters', name:'Bluebell Timber-Base Planter', d:'Bluebell florals on a planter with a timber base.', size:'21 × 21 cm', status:'made', img:PL('CZ1IhnVlWmM'), ig:'CZ1IhnVlWmM', occ:['housewarming','mothersday'], added:19 }),
- P({ id:'p12',cat:'planters', name:'Aztec Stripe Planter', d:'Bold Aztec stripes on an acacia stand.', size:'21 × 21 cm', img:PL('CQanJlSBMwB'), ig:'CQanJlSBMwB', occ:['housewarming','corporate'], added:13 }),
+ P({ id:'p11',cat:'planters', name:'Bluebell Timber-Base Planter', d:'Bluebell florals on a planter with a timber base.', size:'21 × 21 cm', stock:1, base:'planter-21', img:PL('CZ1IhnVlWmM'), ig:'CZ1IhnVlWmM', occ:['housewarming','mothersday'], added:19 }),
+ P({ id:'p12',cat:'planters', name:'Aztec Stripe Planter', d:'Bold Aztec stripes on an acacia stand.', size:'21 × 21 cm', stock:0, base:'planter-21', img:PL('CQanJlSBMwB'), ig:'CQanJlSBMwB', occ:['housewarming','corporate'], added:13 }),
 
  // Other lines: names from recent Instagram posts; prices and drawn pictures are placeholders.
- P({ id:'c1', cat:'candles', name:'Botanical decoupage candle', d:'Leaf and blossom design on a frosted candle jar, boxed with a satin ribbon.', price:22, img:'/images/products/candle-1.jpg', img2:'/images/products/candle-2.jpg', badge:'Teacher favourite', stock:8, hamper:true, pers:{ label:'Words beside the motif', words:15 }, occ:['teacher','christmas','birthday'], fest:['christmas'], added:60 }),
- P({ id:'c2', cat:'candles', name:'Personalised name candle', d:'A name added to the decoupage design. Popular as thank-you gifts for families and guests.', price:28, stock:5, hamper:true, pers:{ label:'Name or short message', words:10 }, occ:['teacher','housewarming','baby'], fest:['christmas'], added:44, col:['#f8e4e4','#c0403a'] }),
- P({ id:'c3', cat:'candles', name:'Blue rose candle', d:'Made to match the blue rose vase and diffuser set.', price:26, stock:0, hamper:true, occ:['mothersday','housewarming'], added:51, col:['#e3eaf5','#3d5f9a'] }),
+ P({ id:'c1', base:'candle-jar', cat:'candles', name:'Botanical decoupage candle', d:'Leaf and blossom design on a frosted candle jar, boxed with a satin ribbon.', price:22, img:'/images/products/candle-1.jpg', img2:'/images/products/candle-2.jpg', badge:'Teacher favourite', stock:8, hamper:true, pers:{ label:'Words beside the motif', words:15 }, occ:['teacher','christmas','birthday'], fest:['christmas'], added:60 }),
+ P({ id:'c2', base:'candle-jar', cat:'candles', name:'Personalised name candle', d:'A name added to the decoupage design. Popular as thank-you gifts for families and guests.', price:28, stock:5, hamper:true, pers:{ label:'Name or short message', words:10 }, occ:['teacher','housewarming','baby'], fest:['christmas'], added:44, col:['#f8e4e4','#c0403a'] }),
+ P({ id:'c3', base:'candle-jar', cat:'candles', name:'Blue rose candle', d:'Made to match the blue rose vase and diffuser set.', price:26, stock:0, hamper:true, occ:['mothersday','housewarming'], added:51, col:['#e3eaf5','#3d5f9a'] }),
  P({ id:'t1', cat:'tealights', name:'Personalised tea light holder', d:'Decoupaged glass with a name on the front.', price:18, badge:'Personalised', stock:6, hamper:true, pers:{ label:'Name to add', words:3 }, occ:['teacher','birthday'], added:58, col:['#fbefee','#c0403a'] }),
  P({ id:'t2', cat:'tealights', name:'Wooden tea light holder', d:'A unique wooden design, decoupaged by hand.', price:24, stock:3, hamper:true, occ:['housewarming','christmas'], added:43, col:['#f3e6dc','#6e1f24'] }),
  P({ id:'t3', cat:'tealights', name:'Festive glass tea light set', d:'A pair of decorated holders for Diwali evenings.', price:30, badge:'Festive', stock:4, hamper:true, occ:['diwali'], fest:['diwali','eid'], added:20, col:['#fbe9d6','#c0403a'] }),
- P({ id:'v1', cat:'vases', name:'Rose crackle vase', d:'Glass vase with rose decoupage and a crackle effect, her most detailed technique.', price:45, badge:'Signature', occ:['mothersday','housewarming','birthday'], fest:['eid'], added:50, col:['#f8e4e4','#c0403a'] }),
+ P({ id:'v1', base:'glass-vase', cat:'vases', name:'Rose crackle vase', d:'Glass vase with rose decoupage and a crackle effect, her most detailed technique.', price:45, badge:'Signature', occ:['mothersday','housewarming','birthday'], fest:['eid'], added:50, col:['#f8e4e4','#c0403a'] }),
  P({ id:'v2', cat:'vases', name:'Blue rose vase set', d:'Vase, candle and diffuser in matching blue roses.', price:85, occ:['mothersday','housewarming'], fest:['mothersday'], added:52, col:['#e3eaf5','#3d5f9a'] }),
  P({ id:'v3', cat:'vases', name:'Decoupaged bottle vase', d:'An upcycled glass bottle turned into a statement vase.', price:30, pers:{ label:'Message on the bottle', words:50 }, occ:['housewarming','birthday'], added:49, col:['#fbefee','#6e1f24'] }),
- P({ id:'j1', cat:'jars', name:'Decoupaged cookie jar', d:'A glass cookie jar for the kitchen bench, ready to fill with homemade cookies.', price:32, stock:2, hamper:true, occ:['housewarming','christmas'], added:55, col:['#fbefee','#6e1f24'] }),
+ P({ id:'j1', base:'glass-jar', cat:'jars', name:'Decoupaged cookie jar', d:'A glass cookie jar for the kitchen bench, ready to fill with homemade cookies.', price:32, stock:2, hamper:true, occ:['housewarming','christmas'], added:55, col:['#fbefee','#6e1f24'] }),
  P({ id:'j2', cat:'jars', name:'Festive chocolate box', d:'A decorated box to fill with Christmas chocolates.', price:20, badge:'Christmas', stock:10, hamper:true, occ:['christmas','teacher'], fest:['christmas'], added:30, col:['#f8e4e4','#c0403a'] }),
- P({ id:'j3', cat:'jars', name:'Storage jar', d:'Clip-top jar for tea, spices or treats.', price:25, stock:0, hamper:true, occ:['housewarming','diwali'], fest:['diwali'], added:22, col:['#f3e6dc','#c0403a'] }),
+ P({ id:'j3', base:'glass-jar', cat:'jars', name:'Storage jar', d:'Clip-top jar for tea, spices or treats.', price:25, stock:0, hamper:true, occ:['housewarming','diwali'], fest:['diwali'], added:22, col:['#f3e6dc','#c0403a'] }),
  P({ id:'d1', cat:'decor', name:'Decoupaged bathroom set', d:'Matching bathroom pieces. One customer came back after six years for the same set for a friend.', price:75, occ:['housewarming'], added:56, col:['#e3eaf5','#6e1f24'] }),
  P({ id:'d2', cat:'decor', name:'Travel-theme coasters', d:'A set of coasters for people who love to travel.', price:28, stock:4, hamper:true, occ:['birthday','christmas','corporate'], added:47, col:['#fbefee','#3d5f9a'] }),
  P({ id:'d3', cat:'decor', name:'Cutlery or pen stand', d:'Amsterdam-inspired stand for cutlery, pens or makeup brushes.', price:30, stock:3, hamper:true, occ:['housewarming','teacher','corporate'], added:42, col:['#f3e6dc','#c0403a'] }),

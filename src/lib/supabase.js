@@ -2,7 +2,7 @@
    The URL and anon key come from .env (see .env.example). Without them the site
    runs entirely from src/data/catalogue.js, as before. */
 import { createClient } from '@supabase/supabase-js';
-import { PRODUCTS } from '../data/catalogue.js';
+import { PRODUCTS, BASES, statusFor } from '../data/catalogue.js';
 
 const env = import.meta.env || {}; /* undefined when the tests run in plain Node */
 const url = env.PUBLIC_SUPABASE_URL;
@@ -13,20 +13,22 @@ export const supabase = url && key ? createClient(url, key, { auth: { persistSes
 export const isConnected = !!(url && key);
 export const adminClient = () => createClient(url, key, { auth: { persistSession: true, storageKey: 'pc-admin-auth' } });
 
-/* A database row in the shape the rest of the code already uses (see catalogue.js). */
-export function fromRow(r) {
+/* Database rows in the shape the rest of the code already uses (see catalogue.js). */
+export const fromBaseRow = b => ({ id: b.id, name: b.name, stock: b.stock_qty });
+export function fromRow(r, bases = BASES) {
   const d = r.details || {};
   const stock = r.stock_qty;
-  return {
+  const p = {
     id: r.id, slug: r.slug, cat: r.category, ht: r.hamper_type || undefined, name: r.name, d: r.description,
     price: r.price_cents == null ? null : r.price_cents / 100, priceFrom: r.price_from,
-    status: r.status ?? (typeof stock === 'number' ? (stock > 0 ? 'in' : 'sold') : null),
-    stock, hamper: r.hamper_eligible, builder: r.is_hamper_builder || undefined,
+    fixedStatus: r.status, stock, base: r.base_id || undefined, hamper: r.hamper_eligible, builder: r.is_hamper_builder || undefined,
     pers: r.personalisable ? { label: r.personalisation_label, words: r.personalisation_word_limit } : false,
     added: r.sort_added,
     img: d.img, img2: d.img2, badge: d.badge, size: d.size || '', occ: d.occ || [], fest: d.fest || [],
     ig: d.ig, col: d.col, sample: d.sample !== false
   };
+  p.status = statusFor(p, bases);
+  return p;
 }
 
 /* Replace the local catalogue with the live products, in place, so every module that
@@ -36,10 +38,14 @@ export function loadLiveProducts() {
   if (!supabase) return Promise.resolve({ source: 'local file' });
   return loading ??= (async () => {
     try {
-      const { data, error } = await supabase.from('products').select('*').order('id');
+      const [{ data, error }, b] = await Promise.all([
+        supabase.from('products').select('*').order('id'),
+        supabase.from('bases').select('*') /* missing until supabase/bases.sql is run: then no bases */
+      ]);
       if (error) throw error;
       if (!data.length) return { source: 'local file', error: 'no products in the database yet' };
-      PRODUCTS.splice(0, PRODUCTS.length, ...data.map(fromRow));
+      BASES.splice(0, BASES.length, ...(b.error ? [] : b.data.map(fromBaseRow)));
+      PRODUCTS.splice(0, PRODUCTS.length, ...data.map(r => fromRow(r, BASES)));
       return { source: 'Supabase', count: data.length };
     } catch (e) {
       console.warn('[PanigaCraftz] Using the local catalogue; Supabase failed:', e.message || e);

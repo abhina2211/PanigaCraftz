@@ -31,6 +31,7 @@ before(async () => {
   await db.exec(sql('seed.sql'));
   await db.exec(sql('admin.sql'));
   await db.exec(sql('admin.sql')); // running it twice must be safe
+  await db.exec(sql('bases.sql'));
   await db.exec(`insert into admins (user_id) select id from auth.users where email = 'neha@example.com'`);
   await db.query(`select submit_enquiry($1)`, [JSON.stringify({ name: 'Test Buyer', email: 'test@example.com', postcode: '2000', lines: [{ id: 'h8', qty: 1, opts: { items: [{ id: 'c1', qty: 1 }, { id: 'j2', qty: 1 }] } }] })]);
 });
@@ -71,4 +72,25 @@ test('hidden products disappear for visitors but not for admins', async () => {
   await as(NEHA, `update products set active = false where id = 'd1'`);
   assert.equal((await as(null, `select id from products where id = 'd1'`)).rows.length, 0);
   assert.equal((await as(NEHA, `select id from products where id = 'd1'`)).rows.length, 1);
+});
+
+test('only admins change blank bases; visitors can read them', async () => {
+  await as(STRANGER, `update bases set stock_qty = 50 where id = 'planter-21'`);
+  assert.equal((await db.query(`select stock_qty from bases where id = 'planter-21'`)).rows[0].stock_qty, 3);
+  await as(NEHA, `update bases set stock_qty = 6 where id = 'planter-21'`);
+  assert.equal((await db.query(`select stock_qty from bases where id = 'planter-21'`)).rows[0].stock_qty, 6);
+  assert.equal((await as(null, `select id from bases`)).rows.length, 4);
+  await as(NEHA, `insert into bases (id, name, stock_qty) values ('vase-small', 'Small glass vase', 4)`);
+  await assert.rejects(as(STRANGER, `insert into bases (id, name) values ('x', 'x')`), /row-level security/);
+  await as(NEHA, `update products set base_id = 'vase-small' where id = 'v1'`);
+  assert.equal((await db.query(`select base_id from products where id = 'v1'`)).rows[0].base_id, 'vase-small');
+});
+
+test('REQ-B8: an admin can add a product on a new base in one go; others cannot', async () => {
+  await as(NEHA, `insert into bases (id, name, stock_qty) values ('vase-tall', 'Tall vase', 2)`);
+  await as(NEHA, `insert into products (id, slug, category, name, price_cents, stock_qty, base_id, hamper_eligible, details)
+                  values ('n-peacock-vase', 'peacock-vase', 'vases', 'Peacock vase', 4800, 0, 'vase-tall', true, '{"sample":false}')`);
+  const { rows } = await db.query(`select base_id, hamper_eligible from products where id = 'n-peacock-vase'`);
+  assert.deepEqual(rows[0], { base_id: 'vase-tall', hamper_eligible: true });
+  await assert.rejects(as(STRANGER, `insert into products (id, slug, category, name) values ('x', 'x', 'vases', 'X')`), /row-level security/);
 });

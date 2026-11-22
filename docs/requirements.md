@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Document version | 1.5 |
+| Document version | 1.7 |
 | Status | Draft, to review with Neha |
 | Owner | Abhi (for Neha Koolwal, PanigaCraftz) |
 | Last updated | 22 Nov 2026 |
@@ -72,7 +72,7 @@ The gift note on the card stays a separate field limited to 150 characters.
 | REQ-D5 | Neha has an admin screen at `/admin/`, behind an email and password login, to edit prices, stock, status, personalisation, word limits, hamper pieces and whether a product is on the site, and to see enquiries and change their status. Only accounts listed in the `admins` table can see or change anything; the database enforces this, not the page. Cancelling an enquiry returns its hamper stock. Products are hidden, never deleted. | Built (v1.3); adding new products with photos is next |
 | REQ-D6 | Customers can send their enquiry list to Neha from the site (name, email, optional mobile, postcode), as well as copying it to Instagram. They get a reference number and the list is cleared. | Built (v1.3) |
 | REQ-D7 | Neha gets an email when a new enquiry arrives. | Next |
-| REQ-D8 | Neha can add a new product with photos from the admin screen, and the site rebuilds so it gets its own page. | Next |
+| REQ-D8 | Neha can add a new product from her phone: photo (taken or chosen, shrunk before upload), name, category, description, price, ready-made pieces, blank base, personalisation, hampers and whether it shows on the website. It appears in the shop straight away. Its own product page appears after the next site build. | Built (v1.7); automatic rebuild comes with deployment |
 
 ### Admin panel design (for Neha, mostly on her phone)
 
@@ -94,6 +94,21 @@ Modelled on the Shopify mobile app and the WordPress dashboard: a home screen th
 | REQ-A13 | "Select" lets Neha tick several products (or select all shown) and then hide, show, add to or remove from hampers, set stock, set personalisation or change the price for all of them at once, with Undo. Adding to hampers skips products without a stock count and says how many. | Built (v1.5) |
 | REQ-A10 | A demo mode with made-up data (`/admin/?demo` on the dev server) lets the design be tried without touching real data. It is not in the live site. | Built (v1.4) |
 
+### Shared blank bases (planters and other pieces)
+
+Several designs are decoupaged onto the same blank piece. For example, the Bluebell Timber-Base and Aztec Stripe planters share one 21 cm planter on a timber base. Some decorated pieces are made in advance to photograph and post; when a customer wants a design that isn't ready, Neha decorates a blank.
+
+| Id | Requirement | Status |
+|---|---|---|
+| REQ-B1 | A blank base has its own name and count of blanks ready to decorate. Each design (product) can be linked to one base; several designs can share a base. Each design keeps its own count of ready-made pieces. | Built (v1.6) |
+| REQ-B2 | A design shows "In stock" while it has ready-made pieces, "Made to order" while it has none but its base has blanks, and "Sold out" when neither is left. A status Neha sets by hand (made to order, sold out) still wins. | Built (v1.6) |
+| REQ-B3 | When a design is ordered, ready-made pieces are used first, then blanks from its base. | Built for hampers (v1.6) |
+| REQ-B4 | Custom hampers follow the same rule: a design can go in a hamper while it has ready-made pieces or blanks, and designs sharing a base share its blanks. The database takes stock in one locked step, so two customers can't get the last blank. A hamper piece needs a stock count or a base. | Built (v1.6) |
+| REQ-B5 | Cancelling an enquiry gives back ready-made pieces and blanks to exactly where they came from. | Built (v1.6) |
+| REQ-B7 | Planters, candles, vases and jars share blank bases. Starting bases (placeholder count of 3 blanks each, to confirm): 21 cm planter on timber base (Bluebell, Aztec Stripe), frosted candle jar (botanical, personalised name, blue rose candles), glass vase (rose crackle vase), clip-top glass jar (cookie jar, storage jar). | Built (v1.7) |
+| REQ-B8 | When adding or editing a product, Neha can pick an existing blank base or create a new one on the spot ("＋ New blank base…"), without leaving the form. | Built (v1.7) |
+| REQ-B6 | The admin panel has a "Blank bases" list (Products tab) to add bases, rename them and change the number of blanks with + and −, with Undo. A product can be linked to a base from its edit screen or, for several at once, with Select then "Made on base…". Product cards show ready-made pieces plus the blanks on their base; Home lists bases running low. | Built (v1.6) |
+
 ### Custom hampers
 
 | Id | Requirement | Status |
@@ -112,12 +127,15 @@ Modelled on the Shopify mobile app and the WordPress dashboard: a home screen th
 2. Real stock counts for hamper pieces, and which pieces she is happy to put in hampers.
 3. Hamper fee, minimum and maximum number of pieces.
 4. Should stock be held when an enquiry is sent, or only when she confirms it? (The draft holds it when sent and releases it on cancel.)
-5. Should single pieces also stop at the stock count when they are not made to order (REQ-H7)?
+5. Should single pieces also stop at the stock count when they are not made to order (REQ-H7)? With bases, the same question applies to blanks: should an enquiry for a single made-to-order design hold a blank?
+6. Confirm the starting bases and which designs use each (REQ-B7), and the real number of blanks. The bottle vase, the blue rose vase set and the chocolate box are not linked to a base.
 
 ## 5. Change log
 
 | Version | Date | Change | Asked by |
 |---|---|---|---|
+| 1.7 | 23 Nov 2026 | Bases for candles, vases and jars (REQ-B7); pick or create a base while adding a product (REQ-B8); add products with a photo from the admin panel (REQ-D8). | Abhi |
+| 1.6 | 23 Nov 2026 | Shared blank bases: designs linked to a base, ready-made first then blanks, for display and hampers, admin to manage bases (REQ-B1 to B6). | Abhi |
 | 1.5 | 23 Nov 2026 | Fewer taps on the Products page: edit in the list with Undo (REQ-A11), bottom-sheet edits (REQ-A12), select several and change together (REQ-A13). | Abhi |
 | 1.4 | 23 Nov 2026 | Admin panel redesigned for phones and non-technical use (REQ-A1 to A10). | Abhi |
 | 1.3 | 23 Nov 2026 | Admin screen with login and database-enforced admin list (REQ-D5); customers can send enquiries from the site (REQ-D6); email alerts and adding products planned (REQ-D7, D8). | Abhi |

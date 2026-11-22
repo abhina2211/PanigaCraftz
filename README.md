@@ -29,6 +29,14 @@ Without this step the site runs from `src/data/catalogue.js`. With it, products,
 
 Stock is now changed in Supabase (**Table Editor > products > stock_qty**) until Neha's admin screen is built.
 
+## Blank bases (shared planters)
+
+Run `supabase/bases.sql` once in the SQL editor (after `admin.sql`). It adds the blank-bases table and starting bases for planters, candles, vases and jars (3 blanks each, a placeholder), links the designs listed in `docs/requirements.md` (REQ-B7), and changes nothing else. Running it again is safe: it only adds what is missing. Until it is run, the site and admin work as before without bases.
+
+## Product photos
+
+To let Neha add products with photos from the admin panel, run `supabase/photos.sql` once in the SQL editor (after `admin.sql`). It creates a public `product-photos` storage folder that only admins can upload to. Without it, products can still be added, just without a photo.
+
 ## Admin access
 
 Neha's admin page is `/admin/` (for example http://localhost:4321/admin/).

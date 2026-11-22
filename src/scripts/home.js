@@ -142,7 +142,7 @@ function renderBuilder() {
   eligible.sort((a, b) => (rules.available(b.id, bag) > 0) - (rules.available(a.id, bag) > 0));
   $('#hbItems').innerHTML = eligible.map(p => {
     const left = rules.available(p.id, bag), n = hb[p.id] || 0, ok = left > 0;
-    return `<li class="${ok ? '' : 'out'}"><div class="thumb">${imgOf(p)}</div><div class="info"><b>${esc(p.name)}</b><small>${priceText(p)}</small><small>${ok ? `${left} in stock` : 'Out of stock'}</small></div>
+    return `<li class="${ok ? '' : 'out'}"><div class="thumb">${imgOf(p)}</div><div class="info"><b>${esc(p.name)}</b><small>${priceText(p)}</small><small>${ok ? `${left} available` : 'Out of stock'}</small></div>
       <span class="qty"><button data-hb-dec="${p.id}" aria-label="One fewer ${esc(p.name)}"${n ? '' : ' disabled'}>−</button><span>${n}</span><button data-hb-inc="${p.id}" aria-label="One more ${esc(p.name)}"${ok && n < left && !full ? '' : ' disabled'}>+</button></span></li>`;
   }).join('');
   $('#hbChosen').innerHTML = pieces ? hbItems().map(it => `<li>${it.qty} x ${esc(byId(it.id).name)}</li>`).join('') : `<li>Add at least ${HAMPER_BUILDER.minItems} pieces.</li>`;

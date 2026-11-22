@@ -12,8 +12,8 @@ const row = p => {
   return `(${[
     p.id, p.slug, p.cat, p.ht ?? null, p.name, p.d,
     p.price == null ? null : Math.round(p.price * 100), !!p.priceFrom,
-    // status: keep 'made'; otherwise let stock decide when stock is counted
-    p.status === 'made' || p.stock == null ? p.status : null,
+    // status: only one Neha set by hand; otherwise the site works it out from stock and base
+    p.fixedStatus ?? null,
     !!pers, pers ? pers.label : null, pers ? pers.words : null,
     p.stock, !!p.hamper, !!p.builder
   ].map(q).join(', ')}, ${q(JSON.stringify(details))}::jsonb, ${p.added})`;
