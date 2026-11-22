@@ -107,3 +107,5 @@ To try the design without real data, run `npm run dev` and open http://localhost
 - `main`: what is live.
 - `development`: finished features waiting to go live.
 - `feature/...`: work in progress, branched from `development` and merged back into it.
+
+One feature branch at a time: a new one starts only after the last one is merged into `development`. A branch is ready to merge when it meets the definition of done in [`CONTRIBUTING.md`](CONTRIBUTING.md).

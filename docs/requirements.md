@@ -2,10 +2,10 @@
 
 | | |
 |---|---|
-| Document version | 1.7 |
+| Document version | 1.8 |
 | Status | Draft, to review with Neha |
 | Owner | Abhi (for Neha Koolwal, PanigaCraftz) |
-| Last updated | 22 Nov 2026 |
+| Last updated | 23 Nov 2026 |
 
 This is the single list of what the website must do. Every change to a requirement gets a new version number and a line in the change log at the bottom. Requirement ids never change or get reused; a dropped requirement is marked **Withdrawn** instead of deleted.
 
@@ -60,6 +60,8 @@ The gift note on the card stays a separate field limited to 150 characters.
 | REQ-S3 | Existing share links keep working: `/#planters`, `/#hampers-festive`, `/#gifts-teacher`, plus `/#build` for the hamper builder. | Built (v1.1) |
 | REQ-S4 | The business rules have automated tests (`npm test`). | Built (v1.1) |
 | REQ-S5 | Work happens on `feature/...` branches taken from `development`; `development` is merged into `main` to go live. | Agreed (v1.1) |
+| REQ-S6 | A feature branch is merged into `development` only when it meets the definition of done in `CONTRIBUTING.md`: builds, tests pass, checked by hand (on a phone for admin changes), Supabase SQL applied and documented, this document updated, no secrets, pushed and reviewed in a pull request. | Agreed (v1.8) |
+| REQ-S7 | Only one feature branch is open at a time: the next one starts from `development` after the previous one is merged. | Agreed (v1.8) |
 
 ### Database (Supabase)
 
@@ -134,6 +136,7 @@ Several designs are decoupaged onto the same blank piece. For example, the Blueb
 
 | Version | Date | Change | Asked by |
 |---|---|---|---|
+| 1.8 | 23 Nov 2026 | Definition of done for feature branches (REQ-S6) and one feature branch at a time (REQ-S7). | Abhi |
 | 1.7 | 23 Nov 2026 | Bases for candles, vases and jars (REQ-B7); pick or create a base while adding a product (REQ-B8); add products with a photo from the admin panel (REQ-D8). | Abhi |
 | 1.6 | 23 Nov 2026 | Shared blank bases: designs linked to a base, ready-made first then blanks, for display and hampers, admin to manage bases (REQ-B1 to B6). | Abhi |
 | 1.5 | 23 Nov 2026 | Fewer taps on the Products page: edit in the list with Undo (REQ-A11), bottom-sheet edits (REQ-A12), select several and change together (REQ-A13). | Abhi |
