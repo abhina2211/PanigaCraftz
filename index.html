@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PanigaCraftz</title>
+<meta name="description" content="Handmade decoupage planters, candles, gifts and hampers by Neha Koolwal, Sydney. Order on Instagram @panigacraftz_neha.">
+<meta name="theme-color" content="#c0403a">
+<link rel="icon" href="images/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="bar" id="bar"><span id="announce">Handmade in Sydney. Australia-wide shipping.</span><span class="cd" id="countdown" hidden></span></div>
+<header><nav class="nav" aria-label="Main">
+  <a class="logo" href="#top"><img src="images/logo.png" alt="PanigaCraftz logo"><span>PanigaCraftz<small>Be crafty</small></span></a>
+  <button class="burger" id="burger" aria-expanded="false" aria-controls="menu" aria-label="Menu"><svg width="20" height="20" viewBox="0 0 20 20"><path d="M2 5h16M2 10h16M2 15h16" stroke="currentColor" stroke-width="2"/></svg></button>
+  <ul class="menu" id="menu">
+    <li><a href="#top">Home</a></li>
+    <li><button aria-expanded="false" aria-controls="dropProducts" data-drop>Products <svg class="caret" viewBox="0 0 10 10"><path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
+      <ul class="drop" id="dropProducts"></ul></li>
+    <li><button aria-expanded="false" aria-controls="dropHampers" data-drop>Hampers <svg class="caret" viewBox="0 0 10 10"><path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
+      <ul class="drop" id="dropHampers"></ul></li>
+    <li><a href="#custom">Custom orders</a></li>
+    <li><a href="#about">About</a></li>
+    <li><a href="#" class="bag" id="openBag">Enquiry list<b id="bagCount">0</b></a></li>
+  </ul>
+</nav></header>
+
+<main id="top">
+<section class="band hero" aria-roledescription="carousel" aria-label="Featured">
+  <div class="wrap">
+    <div class="slides" id="slides"></div>
+    <div class="ctrl"><button id="prev" aria-label="Previous slide">‹</button><div class="dots" id="dots"></div><button id="next" aria-label="Next slide">›</button></div>
+  </div>
+</section>
+
+<section class="band" id="recent"><div class="wrap">
+  <div class="row-head"><div><h2>Recent products</h2><p class="lead">Fresh from Neha's table, the latest pieces she's made.</p></div><a class="btn ghost" href="#shop">View all</a></div>
+  <div class="rail" id="rail"></div>
+</div></section>
+
+<section class="band" id="categories" style="background:var(--soft)"><div class="wrap">
+  <h2>Shop by category</h2>
+  <p class="lead">Seven handmade ranges. Tap one to see what's in it.</p>
+  <div class="cats" id="cats"></div>
+</div></section>
+
+<section class="band occ" id="yearend"><div class="wrap">
+  <div>
+    <h2>Year-end gifts for the teachers who helped them grow</h2>
+    <p class="lead">Personalised candles, mini planters and pamper hampers, boxed and ready to give. Also perfect for Kris Kringle.</p>
+    <p style="margin-top:22px"><button class="btn light" data-occ="teacher">Shop teacher gifts</button></p>
+  </div>
+  <div class="feature">
+    <img src="images/products/candle-2.jpg" alt="The botanical candle in its clear gift box with a satin bow">
+    <div>
+      <h3>Teacher thank-you candle</h3>
+      <ul><li>Hand-decoupaged leaf and blossom design</li><li>Gift box, ribbon and thank-you tag included</li><li>Add the teacher's name, or order 3 or 5 for class reps</li></ul>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><span class="price">$22</span><button class="btn" data-quick="c1">Quick view</button></div>
+    </div>
+  </div>
+</div></section>
+
+<section class="band" id="shop"><div class="wrap">
+  <div class="row-head"><div><h2 id="shopTitle">All handmade pieces</h2><p class="lead" id="shopLead"></p></div></div>
+  <div class="chips" id="filter" role="group" aria-label="Filter by category"></div>
+  <div class="chips sub" id="subfilter" role="group" aria-label="Filter hampers or occasions"></div>
+  <div class="tools">
+    <label>Price<br><select id="priceBand"><option value="">Any price</option><option value="0-40">Under $40</option><option value="40-80">$40 to $80</option><option value="80-9999">$80 and over</option></select></label>
+    <label>Sort<br><select id="sort"><option value="featured">Featured</option><option value="new">Newest</option><option value="low">Price, low to high</option><option value="high">Price, high to low</option></select></label>
+  </div>
+  <div class="grid" id="grid"></div>
+  <p class="note">Draft: names come from Neha's Instagram posts. Prices are placeholders (except the Rose Mummy &amp; Baby set) and drawn pictures stand in until real photos are added. Corporate hampers are suggestions.</p>
+</div></section>
+
+<section class="band" id="instagram"><div class="wrap">
+  <div class="row-head"><div><h2>From our Instagram</h2><p class="lead">Follow along for new pieces and behind-the-scenes reels.</p></div><a class="btn ghost" href="https://www.instagram.com/panigacraftz_neha/">@panigacraftz_neha</a></div>
+  <div class="igstrip" id="igstrip"></div>
+</div></section>
+
+<section class="band" style="background:var(--soft)"><div class="wrap">
+  <h2>How ordering works</h2>
+  <div class="steps">
+    <div class="step"><h3>1. Pick your pieces</h3><p>Use Quick view to check details and add a name, packaging or gift note.</p></div>
+    <div class="step"><h3>2. Copy your list</h3><p>We turn your enquiry list into a ready-to-send message. Nothing is charged yet.</p></div>
+    <div class="step"><h3>3. Send it on Instagram</h3><p>Paste it into a DM to @panigacraftz_neha. We confirm stock, total and timing.</p></div>
+    <div class="step"><h3>4. Pick up or delivery</h3><p>Collect in Sydney or have it posted Australia-wide. New Zealand on request.</p></div>
+  </div>
+</div></section>
+
+<section class="band custom" id="custom"><div class="wrap">
+  <div>
+    <h2>Custom, corporate and bulk orders</h2>
+    <p class="lead">A naming ceremony, table numbers for a party, client gifts for your team, or ten teacher gifts for one class? Three quick steps and we'll come back with a quote.</p>
+    <p class="lead">Please allow at least 7 days for custom pieces.</p>
+  </div>
+  <div class="wizard" id="wizard">
+    <div class="prog" aria-hidden="true"><i><b></b></i><i><b></b></i><i><b></b></i></div>
+    <p class="steplabel" id="stepLabel">Step 1 of 3: What you need</p>
+    <form id="coForm" novalidate>
+      <fieldset class="co-step" data-step="1" style="border:0;padding:0;margin:0;display:grid;gap:14px">
+        <legend class="sr" style="position:absolute;left:-9999px">What you need</legend>
+        <div class="types" role="radiogroup" aria-label="Type of order">
+          <label><input type="radio" name="type" value="Custom hamper">Custom hamper</label>
+          <label><input type="radio" name="type" value="Corporate gifts">Corporate gifts</label>
+          <label><input type="radio" name="type" value="Personalised piece">Personalised piece</label>
+          <label><input type="radio" name="type" value="Event or party">Event or party</label>
+        </div>
+        <span class="err" data-for="type" hidden>Choose what you need.</span>
+        <div class="two"><label>Occasion<select name="occasion" id="coOcc"></select></label><label>Quantity<input name="qty" type="number" min="1" max="500" value="1" inputmode="numeric"></label></div>
+        <span class="err" data-for="qty" hidden>Enter a quantity from 1 to 500.</span>
+        <label>Budget per item<select name="budget"><option value="">Choose a budget</option><option>Under $40</option><option>$40 to $80</option><option>$80 to $150</option><option>$150 and over</option></select></label>
+        <span class="err" data-for="budget" hidden>Choose a budget.</span>
+      </fieldset>
+      <fieldset class="co-step" data-step="2" hidden style="border:0;padding:0;margin:0;display:grid;gap:14px">
+        <label>Tell us about it<textarea name="details" rows="4" placeholder="Colours, names, theme, what to include, e.g. pastel pink, names on tags: Ms Lee, Mr Patel"></textarea></label>
+        <span class="err" data-for="details" hidden>Add a few more details (at least 15 characters).</span>
+        <label>Needed by<input name="date" type="date"></label>
+        <span class="err" data-for="date" hidden>Choose a date at least 7 days from today.</span>
+      </fieldset>
+      <fieldset class="co-step" data-step="3" hidden style="border:0;padding:0;margin:0;display:grid;gap:14px">
+        <div class="two"><label>Your name<input name="name" autocomplete="name"></label><label>Email<input name="email" type="email" autocomplete="email"></label></div>
+        <span class="err" data-for="name" hidden>Enter your name.</span><span class="err" data-for="email" hidden>Enter a valid email.</span>
+        <div class="two"><label>Mobile (optional)<input name="phone" type="tel" autocomplete="tel" placeholder="04xx xxx xxx"></label><label>Postcode<input name="postcode" inputmode="numeric" maxlength="4" autocomplete="postal-code"></label></div>
+        <span class="err" data-for="phone" hidden>Enter an Australian mobile, e.g. 0412 345 678.</span><span class="err" data-for="postcode" hidden>Enter a 4-digit postcode.</span>
+        <label class="check"><input type="checkbox" name="consent">I'm happy for PanigaCraftz to contact me about this order.</label>
+        <span class="err" data-for="consent" hidden>Please tick to continue.</span>
+      </fieldset>
+      <div class="wnav" id="coNav"><button type="button" class="btn ghost" id="coBack" style="visibility:hidden">Back</button><button type="submit" class="btn" id="coNext">Continue</button></div>
+    </form>
+    <div class="done" id="coDone" hidden>
+      <p class="steplabel">Request ready</p>
+      <p class="ref" id="coRef"></p>
+      <p class="lead" style="margin-top:4px">Copy the message below and send it to us on Instagram. We usually reply within a day.</p>
+      <div class="out" id="customOut" style="display:block;margin-top:12px"></div>
+      <p style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="copyCustom" type="button">Copy message</button><a class="btn ghost" id="dmCustom" href="https://ig.me/m/panigacraftz_neha">Open Instagram DM</a><button class="btn ghost" id="coRestart" type="button">Start again</button></p>
+    </div>
+  </div>
+</div></section>
+
+<section class="band about" id="about"><div class="wrap">
+  <img src="images/logo.png" alt="">
+  <h2>Made by hand, at home in Sydney</h2>
+  <p class="lead" style="margin-inline:auto">PanigaCraftz is Neha Koolwal's craft studio. A former lecturer, she started the business six years ago and loves giving colour to plain products. Every piece is decorated by hand using decoupage: paper designs are cut out, layered onto glass, wood, metal or ceramic and sealed with varnish, so no two pieces are exactly the same.</p>
+  <p style="margin-top:22px"><a class="btn" href="https://www.instagram.com/panigacraftz_neha/">Follow @panigacraftz_neha</a></p>
+</div></section>
+</main>
+
+<footer class="band"><div class="wrap">
+  <div><h3>PanigaCraftz</h3><p style="margin:0">Handmade decoupage planters, décor, personalised gifts and hampers. Sydney based, shipping Australia-wide (New Zealand on request). Orders by Instagram DM.</p></div>
+  <div><h3>Products</h3><div id="footCats"></div></div>
+  <div><h3>Hampers</h3><div id="footHampers"></div></div>
+  <div><h3>Help</h3><a href="#custom">Custom orders</a><a href="#about">About</a><a href="https://www.instagram.com/panigacraftz_neha/">Instagram</a></div>
+</div></footer>
+
+<dialog class="qview" id="qview" aria-labelledby="qName">
+  <div class="qgrid">
+    <div class="qimg" id="qImg"></div>
+    <div class="qbody">
+      <span id="qCat" style="color:var(--red-ink);font-weight:800;font-size:13px"></span>
+      <h2 id="qName"></h2>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="price" id="qPrice"></span><span id="qStatus"></span><span class="size" id="qSize"></span></div>
+      <p id="qDesc" style="margin:0;color:var(--mute)"></p>
+      <ul id="qList"></ul>
+      <div class="pers" id="qPers">
+        <label>Name to add <span class="hint">(optional, up to 30 characters)</span><input id="qEngrave" maxlength="30" placeholder="e.g. Ms Lee"></label>
+        <div class="preview-name" id="qEngravePreview" aria-live="polite"></div>
+        <label>Packaging<select id="qPack"></select></label>
+        <label>Gift note <span class="hint" id="qNoteCount">0 / 150</span><textarea id="qNote" rows="2" maxlength="150" placeholder="Thank you for a wonderful year!"></textarea></label>
+      </div>
+      <div class="tags" id="qTags"></div>
+      <div class="qact"><div class="qty"><button id="qMinus" aria-label="One fewer">−</button><span id="qQty">1</span><button id="qPlus" aria-label="One more">+</button></div><button class="btn" id="qAdd">Add to enquiry</button></div>
+      <a id="qIg" class="note" style="margin:0" href="#">View on Instagram</a>
+    </div>
+  </div>
+  <div class="qtop"><button id="qClose" aria-label="Close quick view">×</button></div>
+  <div class="qnav"><button id="qPrev" aria-label="Previous product">‹</button><button id="qNext" aria-label="Next product">›</button></div>
+</dialog>
+
+<aside class="drawer" id="drawer" aria-label="Enquiry list">
+  <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="font-size:28px">Enquiry list</h2><button class="x" id="closeBag" aria-label="Close">×</button></div>
+  <ul id="bagList"></ul>
+  <div id="bagFoot">
+    <p class="ship" id="shipMsg"></p><div class="shipbar"><i id="shipBar"></i></div>
+    <div class="totals"><div><span>Subtotal</span><span id="bagSub"></span></div><div><span>Shipping estimate</span><span id="bagShip"></span></div><div class="grand"><span>Estimated total</span><span id="bagTotal"></span></div></div>
+    <button class="btn" id="copyBag" style="width:100%">Copy message for Instagram</button>
+    <a class="btn ghost" style="margin-top:10px;width:100%" href="https://ig.me/m/panigacraftz_neha" id="dmBag">Open Instagram DM</a>
+  </div>
+</aside>
+
+<div class="fpreview" id="fpreview" aria-label="Festival preview"><p>Festival preview (admin)</p><div id="fbuttons"></div></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
