@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Document version | 1.1 |
+| Document version | 1.2 |
 | Status | Draft, to review with Neha |
 | Owner | Abhi (for Neha Koolwal, PanigaCraftz) |
 | Last updated | 22 Nov 2026 |
@@ -24,7 +24,7 @@ MVP target: **30 Nov 2026**.
 | 0. Prototype | Done (22 Nov) | Static site: catalogue in `js/data.js`, enquiry list, custom order form, festival engine | Live in this repo |
 | 1. Rules first | 22 to 24 Nov | The two features below, built in the static site with the rules in `js/rules.js`, and the matching draft database schema in `supabase/schema.sql` | Rules work in the browser and are written down here |
 | 2. Astro move | Started 22 Nov | Astro + Tailwind project in the same repo. One product page template generates a page per product. Existing JS becomes components; `rules.js` is imported unchanged. Catalogue still read from a local file. Deploy previews on Cloudflare Pages or Netlify | Every product has its own URL; site matches the prototype |
-| 3. Supabase | 27 to 30 Nov | Create the Supabase project (needs Abhi's go-ahead), apply `supabase/schema.sql`, load the catalogue, read products and stock from the database, save enquiries through a server function, simple admin screen for Neha to edit products and stock | Neha can change stock and a hamper respects it without a code change |
+| 3. Supabase | Started 22 Nov (project created by Abhi) | Create the Supabase project (needs Abhi's go-ahead), apply `supabase/schema.sql`, load the catalogue, read products and stock from the database, save enquiries through a server function, simple admin screen for Neha to edit products and stock | Neha can change stock and a hamper respects it without a code change |
 | 4. Payments | Jan 2027 | Stripe Checkout and Australia Post shipping quotes | Customer can pay online |
 
 ## 3. Requirements
@@ -61,6 +61,17 @@ The gift note on the card stays a separate field limited to 150 characters.
 | REQ-S4 | The business rules have automated tests (`npm test`). | Built (v1.1) |
 | REQ-S5 | Work happens on `feature/...` branches taken from `development`; `development` is merged into `main` to go live. | Agreed (v1.1) |
 
+### Database (Supabase)
+
+| Id | Requirement | Status |
+|---|---|---|
+| REQ-D1 | Products, prices, stock and word limits live in Supabase. The site reads them at build time (product pages) and again in the browser (live stock and prices). If Supabase is not set up or can't be reached, the site falls back to the local catalogue file. | Built (v1.2) |
+| REQ-D2 | The website only uses the public (anon) key, which can read active products and submit enquiries, nothing else. The service role key is never used in the website or committed. Keys live in a local `.env` file that is not committed. | Built (v1.2) |
+| REQ-D3 | An enquiry is saved by one database function that checks every rule (word limits, stock, hamper size) and holds hamper stock in the same transaction. If any line fails, nothing is saved. | Built and tested (v1.2); not yet called from the page |
+| REQ-D4 | The database starts with the current catalogue, generated from the catalogue file (`npm run seed`). | Built (v1.2) |
+| REQ-D5 | Neha has an admin screen, behind a login, to edit products, prices, stock and word limits and to see enquiries. | Next |
+| REQ-D6 | Customers can send their enquiry list to Neha from the site (name, email, postcode), as well as copying it to Instagram. | Next |
+
 ### Custom hampers
 
 | Id | Requirement | Status |
@@ -85,5 +96,6 @@ The gift note on the card stays a separate field limited to 150 characters.
 
 | Version | Date | Change | Asked by |
 |---|---|---|---|
+| 1.2 | 22 Nov 2026 | Supabase connection: live products and stock (REQ-D1), key handling (REQ-D2), all-or-nothing enquiry function (REQ-D3), seed (REQ-D4); admin and sending enquiries planned (REQ-D5, D6). | Abhi |
 | 1.1 | 22 Nov 2026 | Astro move started: page per product (REQ-S1 to S3), rules tests (REQ-S4), branch workflow (REQ-S5). | Abhi |
 | 1.0 | 22 Nov 2026 | First version. Delivery plan; personalisation flag and per-product word limit (REQ-P1 to P5); build-your-own hampers limited to stock (REQ-H1 to H7). | Abhi |

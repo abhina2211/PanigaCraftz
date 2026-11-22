@@ -3,6 +3,7 @@
    Lines marked BACKEND HOOK are where Supabase calls go in phase 3. */
 import { IG, CATEGORIES, HAMPER_TYPES, OCCASIONS, FESTIVALS, PACKAGING_DEFAULT, SHIPPING } from '../data/catalogue.js';
 import * as rules from '../lib/rules.js';
+import { loadLiveProducts } from '../lib/supabase.js';
 
 export { rules };
 export const byId = rules.byId;
@@ -31,7 +32,7 @@ export const statusHtml = p => p.status ? `<span class="status ${p.status}">${{ 
 export const packOptions = sel => [PACKAGING_DEFAULT, ...Object.values(FESTIVALS).map(f => f.packaging)].map(o => `<option${o === sel ? ' selected' : ''}>${esc(o)}</option>`).join('');
 
 /* ---------- tiny event hub so pages can react to shared changes ---------- */
-const listeners = { festival: [], bag: [] };
+const listeners = { festival: [], bag: [], catalogue: [] };
 export const on = (name, fn) => listeners[name].push(fn);
 const emit = name => listeners[name].forEach(fn => fn());
 
@@ -140,9 +141,17 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeDrops(); $('#drawer').classList.remove('open'); } });
 
-/* Call once per page, after the page has registered its listeners. */
-export function start() {
+/* Call once per page, after the page has registered its listeners. The page first
+   shows the products it was built with, then swaps in live stock, prices and word
+   limits from Supabase (if connected) and re-checks the enquiry list against them. */
+export async function start() {
   applyFestival('auto');
   renderBag();
+  const live = await loadLiveProducts();
+  if (live.source === 'Supabase') {
+    bag = bag.filter(l => { const r = rules.checkLine(l, bag.filter(x => x !== l)); if (!r.ok) dropped.push(r.msg); return r.ok; });
+    saveBag(); emit('catalogue'); renderBag();
+  }
+  document.documentElement.dataset.catalogue = live.source; /* handy for checking: which data is showing */
   if (dropped.length) { saveBag(); setTimeout(() => toast(`Removed from your list. ${dropped[0]}`), 300); }
 }

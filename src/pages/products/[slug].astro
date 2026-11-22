@@ -6,8 +6,10 @@ import Base from '../../layouts/Base.astro';
 import { PRODUCTS, CATEGORIES, HAMPER_TYPES, OCCASIONS, IG } from '../../data/catalogue.js';
 import { persOf } from '../../lib/rules.js';
 import { imgOf } from '../../lib/pictures.js';
+import { loadLiveProducts } from '../../lib/supabase.js';
 
-export function getStaticPaths() {
+export async function getStaticPaths() {
+  await loadLiveProducts(); /* products from Supabase when .env has the keys, else the local file */
   return PRODUCTS.map(p => ({ params: { slug: p.slug }, props: { p } }));
 }
 
@@ -34,8 +36,8 @@ const related = PRODUCTS.filter(x => x.id !== p.id && x.cat === p.cat).slice(0, 
         <span class="cat-l">{group?.name}</span>
         <h1>{p.name}</h1>
         <div class="flex flex-wrap items-center gap-3">
-          <span class="price">{price}</span>
-          {statusText && <span class={`status ${p.status}`}>{statusText}</span>}
+          <span class="price" id="pPrice">{price}</span>
+          <span id="pStatus">{statusText && <span class={`status ${p.status}`}>{statusText}</span>}</span>
           {p.size && <span class="size">{p.size}</span>}
         </div>
         <p class="lead">{p.d}</p>
