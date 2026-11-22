@@ -5,6 +5,7 @@
    may make it (supabase/admin.sql) and whether the values are valid. */
 import { isConnected, adminClient, fromRow } from '../lib/supabase.js';
 import { imgOf } from '../lib/pictures.js';
+import { CATEGORIES, HAMPER_TYPES } from '../data/catalogue.js';
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -184,10 +185,11 @@ const screens = {
         <div class="adm-chips" data-for="products">${chips}</div></div>
       ${selecting ? `<p class="adm-help" style="margin:4px 4px 10px">Tap products to select them. <button class="adm-btn ghost" data-action="select-all" style="min-height:36px;padding:0 6px;color:var(--red-ink)">Select all ${list.length}</button></p>` : ''}
       ${list.length ? `<ul class="adm-list${selecting ? ' adm-selecting' : ''}">${list.map(quickCard).join('')}</ul>` : '<div class="adm-empty">No products match.</div>'}
-      <p class="adm-help" style="margin-top:16px">Adding new products with photos is coming next. For now, ask Abhi.</p>` };
+      ${selecting ? '' : '<a class="adm-btn primary big" href="#/products/new" style="margin-top:14px">Add a product</a>'}` };
   },
 
   product(id) {
+    if (id === 'new') return screens.newProduct();
     const p = products.find(x => x.id === id);
     if (!p) return { title: 'Product', html: '<div class="adm-empty">This product wasn\'t found.</div>' };
     const tracked = p.stock_qty != null;
@@ -207,7 +209,7 @@ const screens = {
           <span class="adm-field">How many do you have ready?</span>
           <div class="adm-stepper"><button type="button" data-step="-1" aria-label="One fewer">−</button><input name="stock" type="number" inputmode="numeric" min="0" step="1" value="${p.stock_qty ?? 0}" aria-label="Stock"><button type="button" data-step="1" aria-label="One more">+</button></div>
         </div>
-        ${basesReady && !p.is_hamper_builder ? `<label class="adm-field">Made on a blank base<select name="base"><option value="">No shared base</option>${bases.map(b => `<option value="${esc(b.id)}"${b.id === p.base_id ? ' selected' : ''}>${esc(b.name)} (${b.stock_qty} blank${b.stock_qty === 1 ? '' : 's'})</option>`).join('')}</select></label>
+        ${basesReady && !p.is_hamper_builder ? `${basePicker(p.base_id)}
           <p class="adm-help">Pick the blank this design is made on. When no ready-made piece is left, customers can still order it while blanks are left; one blank is used per order.</p>` : ''}
         <span class="adm-field">What customers see</span>
         <div class="adm-seg" role="radiogroup" aria-label="Availability">
@@ -234,6 +236,44 @@ const screens = {
       </form>` };
   },
 
+  /* Add a product (REQ-D8, REQ-B8): one screen, plain questions, photo from the phone. */
+  newProduct() {
+    return { title: 'Add a product', back: '#/products', html: `
+      <form id="newForm" class="adm-form" novalidate>
+      <div class="adm-card adm-form"><h2>Photo</h2>
+        <label class="adm-photo" id="photoBox"><input type="file" id="newPhoto" name="photo" accept="image/*" hidden><span id="photoPreview">📷 Take or choose a photo</span></label>
+        <p class="adm-help">Optional. A drawn picture is shown until you add one.</p></div>
+
+      <div class="adm-card adm-form"><h2>About it</h2>
+        <label class="adm-field">Name<input name="name" required placeholder="e.g. Peacock feather vase"></label>
+        <label class="adm-field">Category<select name="category" required>${CATEGORIES.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select></label>
+        <label class="adm-field" id="htBox" hidden>Hamper type<select name="hamper_type">${HAMPER_TYPES.map(h => `<option value="${h.id}">${esc(h.name)}</option>`).join('')}</select></label>
+        <label class="adm-field">Short description<textarea name="description" rows="3" placeholder="What it is, size, what makes it special" style="font-size:17px;padding:10px 14px;border-radius:12px;border:1.5px solid var(--line)"></textarea></label>
+        <label class="adm-field">Price in dollars<input name="price" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Leave empty for 'Price on enquiry'"></label></div>
+
+      <div class="adm-card adm-form"><h2>Stock</h2>
+        <span class="adm-field">Ready-made pieces now</span>
+        <div class="adm-stepper"><button type="button" data-step="-1" aria-label="One fewer">−</button><input name="stock" type="number" inputmode="numeric" min="0" step="1" value="0" aria-label="Ready-made pieces"><button type="button" data-step="1" aria-label="One more">+</button></div>
+        ${basesReady ? basePicker('') + '<p class="adm-help">If it is decorated on a blank you share with other designs, pick that blank, or create it here.</p>' : ''}
+      </div>
+
+      <div class="adm-card adm-form"><h2>Personalisation</h2>
+        <label class="adm-toggle"><span>Customers can add a name or message</span><input type="checkbox" name="pers"></label>
+        <div class="adm-sub" id="newPersBox" hidden>
+          <label class="adm-field">What to ask the customer<input name="label" value="Name to add"></label>
+          <span class="adm-field">Most words allowed</span>
+          <div class="adm-stepper"><button type="button" data-step="-1" aria-label="One fewer word">−</button><input name="words" type="number" inputmode="numeric" min="1" max="200" value="5" aria-label="Most words allowed"><button type="button" data-step="1" aria-label="One more word">+</button></div>
+        </div></div>
+
+      <div class="adm-card adm-form"><h2>Hampers and visibility</h2>
+        <label class="adm-toggle"><span>Can go in custom hampers<small>Only while it's in stock</small></span><input type="checkbox" name="hamper"></label>
+        <label class="adm-toggle"><span>Show on the website</span><input type="checkbox" name="active" checked></label></div>
+
+      <p class="adm-error" id="newErr" hidden></p>
+      <button class="adm-btn primary big" type="submit" id="newSave">Add product</button>
+      </form>` };
+  },
+
   more() {
     return { title: 'More', html: `
       <div class="adm-card"><h2>Signed in</h2><p class="adm-help">${esc(me.email)}</p></div>
@@ -246,7 +286,23 @@ const screens = {
   }
 };
 const enquiryRow = e => `<li><a class="adm-row" href="#/enquiries/${e.id}"><div class="adm-row-main"><b>${esc(e.customer_name)}</b><small>${esc(e.ref)} · ${when(e.created_at)} · ${e.enquiry_items.reduce((s, i) => s + i.qty, 0)} item(s)</small></div><div class="adm-row-end">${statusPill(e.status)}<small>${enquiryTotal(e)}</small></div>${CHEVRON}</a></li>`;
-/* ---------- blank bases (REQ-B6) ---------- */
+/* ---------- blank bases (REQ-B6, REQ-B8) ---------- */
+/* Choose the blank a design is made on, or create a new one on the spot. */
+const basePicker = selectedId => `<label class="adm-field">Made on a blank base<select name="base" data-base-picker data-previous="${esc(selectedId || '')}">
+  <option value="">No shared base</option>
+  ${bases.filter(b => b.active || b.id === selectedId).map(b => `<option value="${esc(b.id)}"${b.id === selectedId ? ' selected' : ''}>${esc(b.name)} (${b.stock_qty} blank${b.stock_qty === 1 ? '' : 's'})</option>`).join('')}
+  <option value="__new">＋ New blank base…</option></select></label>`;
+/* Picking "New blank base…" opens the base panel; when it's saved the new base is selected. */
+function pickNewBase(select) {
+  const previous = select.dataset.previous || '';
+  select.value = previous;
+  baseSheet(null, created => {
+    const opt = new Option(`${created.name} (${created.stock_qty} blank${created.stock_qty === 1 ? '' : 's'})`, created.id);
+    select.insertBefore(opt, select.querySelector('option[value="__new"]'));
+    select.value = created.id; select.dataset.previous = created.id;
+    select.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+}
 const usedBy = b => products.filter(p => p.base_id === b.id);
 function basesScreen(q) {
   selecting = false; selected.clear();
@@ -265,7 +321,7 @@ function basesScreen(q) {
       <p class="adm-help" style="margin-top:10px">To link designs: open a product and pick its base, or use Select on the product list.</p>`;
   return { title: 'Blank bases', html: `<div class="adm-search"><div class="adm-chips" data-for="products">${chips}</div></div>${body}` };
 }
-function baseSheet(b) {
+function baseSheet(b, onCreated) {
   openSheet(`<h3 id="sheetTitle">${b ? 'Edit blank base' : 'Add a blank base'}</h3><p class="sub">For example "21 cm planter on timber base"</p>
     <label class="f">Name<input type="text" name="name" value="${esc(b ? b.name : '')}" required></label>
     ${b ? '' : `<span class="adm-lab" style="font-size:14px">Blanks ready now</span><div class="adm-stepper"><button type="button" data-step="-1" aria-label="One fewer">−</button><input name="stock" type="number" inputmode="numeric" min="0" step="1" value="0" aria-label="Blanks ready"><button type="button" data-step="1" aria-label="One more">+</button></div>`}
@@ -276,16 +332,17 @@ function baseSheet(b) {
     if (b) return void commit([b.id], () => ({ name, active: f.active.checked }), `Saved ${name}`, null, 'bases');
     const stock = Number(f.stock.value);
     if (!(stock >= 0 && Number.isInteger(stock))) { toast('Enter a whole number, 0 or more'); return false; }
-    addBase(name, stock);
+    addBase(name, stock, onCreated);
   });
 }
-async function addBase(name, stock_qty) {
+async function addBase(name, stock_qty, onCreated) {
   let id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'base';
   while (bases.some(b => b.id === id)) id += '-2';
   const { data, error } = await sb.from('bases').insert({ id, name, stock_qty }).select();
   if (error || !data?.length) { toast(error ? friendly(error.message) : 'Not saved: this account can\'t make changes.'); return; }
   bases = [...bases, data[0]].sort((a, b) => a.name.localeCompare(b.name));
-  toast(`Added ${name}`); refresh();
+  toast(`Added ${name}`);
+  if (onCreated) onCreated(data[0]); else refresh();
 }
 
 /* A product card you can edit without opening it (REQ-A11). */
@@ -372,6 +429,9 @@ document.addEventListener('click', async e => {
   if (t.dataset.action === 'save') return saveProduct();
 });
 document.addEventListener('change', e => {
+  if (e.target.matches('[data-base-picker]')) { if (e.target.value === '__new') pickNewBase(e.target); else e.target.dataset.previous = e.target.value; return; }
+  if (e.target.id === 'newPhoto') return showPhotoPreview(e.target);
+  if (e.target.name === 'category' && e.target.closest('#newForm')) { $('#htBox').hidden = e.target.value !== 'hampers'; return; }
   const q = e.target.dataset.q; if (!q) return;
   quickAction(q, e.target.closest('[data-id]').dataset.id, e.target);
 });
@@ -540,6 +600,69 @@ function bulkAction(kind) {
     f => { const v = Number(f.stock.value); if (!(v >= 0 && Number.isInteger(v))) { toast('Enter a whole number, 0 or more'); return false; }
       commit(ids, () => ({ stock_qty: v }), `${n}: stock set to ${v}`); });
 }
+
+/* ---------- adding a product ---------- */
+let newPhotoBlob = null;
+/* Phone photos are large: shrink to at most 1400 px wide and save as JPEG. */
+async function shrinkPhoto(file) {
+  const img = await createImageBitmap(file);
+  const scale = Math.min(1, 1400 / Math.max(img.width, img.height));
+  const c = Object.assign(document.createElement('canvas'), { width: Math.round(img.width * scale), height: Math.round(img.height * scale) });
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  return new Promise(res => c.toBlob(res, 'image/jpeg', 0.85));
+}
+async function showPhotoPreview(input) {
+  const file = input.files[0]; if (!file) return;
+  try { newPhotoBlob = await shrinkPhoto(file); } catch (e) { toast('That photo couldn\'t be read. Try another.'); return; }
+  $('#photoPreview').innerHTML = `<img src="${URL.createObjectURL(newPhotoBlob)}" alt="Photo preview">`;
+}
+document.addEventListener('input', e => { if (e.target.name === 'pers' && e.target.closest('#newForm')) $('#newPersBox').hidden = !e.target.checked; });
+document.addEventListener('submit', async e => {
+  if (e.target.id !== 'newForm') return;
+  e.preventDefault();
+  const f = e.target.elements, err = $('#newErr');
+  const name = f.name.value.trim(), price = f.price.value.trim(), stock = Number(f.stock.value), words = Number(f.words.value);
+  const base_id = f.base && f.base.value && f.base.value !== '__new' ? f.base.value : null;
+  const problem = name.length < 2 ? 'Give the product a name.'
+    : price !== '' && !(Number(price) >= 0) ? 'Price can\'t be negative.'
+    : !(Number.isInteger(stock) && stock >= 0) ? 'Ready-made pieces must be a whole number, 0 or more.'
+    : f.pers.checked && !(words >= 1 && words <= 200) ? 'Word limit must be between 1 and 200.' : '';
+  err.textContent = problem; err.hidden = !problem;
+  if (problem) return;
+  const btn = $('#newSave'); btn.disabled = true; btn.textContent = 'Adding…';
+  try {
+    const slugBase = name.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'product';
+    let slug = slugBase, n = 2;
+    while (products.some(p => p.slug === slug)) slug = `${slugBase}-${n++}`;
+    const id = 'n-' + slug;
+    let img;
+    if (newPhotoBlob) {
+      const path = `${slug}-${Date.now().toString(36)}.jpg`;
+      const up = await sb.storage.from('product-photos').upload(path, newPhotoBlob, { contentType: 'image/jpeg' });
+      if (up.error) throw new Error(/bucket|not found/i.test(up.error.message) ? 'Photos aren\'t set up yet (supabase/photos.sql). Add it without a photo for now.' : up.error.message);
+      img = sb.storage.from('product-photos').getPublicUrl(path).data.publicUrl;
+    }
+    const row = {
+      id, slug, name, category: f.category.value, hamper_type: f.category.value === 'hampers' ? f.hamper_type.value : null,
+      description: f.description.value.trim(), price_cents: price === '' ? null : Math.round(Number(price) * 100),
+      stock_qty: stock, personalisable: f.pers.checked,
+      personalisation_label: f.pers.checked ? (f.label.value.trim() || 'Name to add') : null,
+      personalisation_word_limit: f.pers.checked ? words : null,
+      hamper_eligible: f.hamper.checked, active: f.active.checked,
+      details: { img, occ: [], fest: [], sample: false },
+      sort_added: Math.max(0, ...products.map(p => p.sort_added || 0)) + 1,
+      ...(base_id ? { base_id } : {})
+    };
+    const { data, error } = await sb.from('products').insert(row).select();
+    if (error || !data?.length) throw new Error(error ? friendly(error.message) : 'Not saved: this account can\'t add products.');
+    products = [...products, data[0]];
+    newPhotoBlob = null;
+    location.hash = `#/products/${encodeURIComponent(id)}`;
+    toast(`Added ${name}. It shows in the shop now; its own page appears after the next site update.`);
+  } catch (x) {
+    err.textContent = x.message; err.hidden = false;
+  } finally { btn.disabled = false; btn.textContent = 'Add product'; }
+});
 
 /* ---------- sign in ---------- */
 const gate = id => ['#signIn', '#noAccess', '#app'].forEach(s => { $(s).hidden = s !== id; });

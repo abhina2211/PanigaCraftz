@@ -197,3 +197,7 @@
 .adm-app.bulk-on~.adm-toast{bottom:calc(270px + env(safe-area-inset-bottom))}
 @media (min-width:900px){.adm-toast{left:calc(50% - 110px);right:auto;width:440px}}
 .adm-mini{display:inline-flex}.adm-q2 .end{flex:none}
+/* add a product: photo picker */
+.adm-photo{display:grid;place-items:center;min-height:180px;border:2px dashed #d9c4c3;border-radius:16px;background:var(--soft);cursor:pointer;font-weight:800;color:var(--mute);overflow:hidden}
+.adm-photo img{width:100%;max-height:320px;object-fit:cover;display:block}
+.adm-form textarea{width:100%;background:var(--bg);color:var(--ink);font-family:inherit}

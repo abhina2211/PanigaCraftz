@@ -28,17 +28,18 @@ test('REQ-P3/P4: text over the limit or on a non-personalisable product is refus
 
 test('REQ-H3: out-of-stock or non-hamper pieces cannot go in a hamper', () => {
   assert.ok(rules.checkHamper([{ id: 'c1', qty: 1 }, { id: 'j2', qty: 1 }], 1, []).ok);
-  assert.ok(!rules.checkHamper([{ id: 'c1', qty: 1 }, { id: 'c3', qty: 1 }], 1, []).ok); // c3 stock 0
+  assert.ok(rules.checkHamper([{ id: 'c1', qty: 1 }, { id: 'c3', qty: 1 }], 1, []).ok);  // c3: no ready-made, but blank candle jars
+  assert.ok(!rules.checkHamper([{ id: 'c1', qty: 1 }, { id: 'p9', qty: 1 }], 1, []).ok);  // p9 not counted
   assert.ok(!rules.checkHamper([{ id: 'c1', qty: 1 }, { id: 'p1', qty: 1 }], 1, []).ok); // p1 not a hamper piece
-  assert.ok(!rules.checkHamper([{ id: 'j1', qty: 3 }], 1, []).ok);                      // j1 stock 2
+  assert.ok(!rules.checkHamper([{ id: 't2', qty: 4 }], 1, []).ok);                      // t2 stock 3, no base
 });
 
 test('REQ-H4: stock already held by hampers in the list counts', () => {
-  const bag = [{ key: 'a', id: 'h8', qty: 1, opts: { items: [{ id: 'j1', qty: 2 }] } }];
-  assert.equal(rules.available('j1', bag), 0);
-  assert.ok(!rules.checkHamper([{ id: 'j1', qty: 1 }, { id: 'c1', qty: 1 }], 1, bag).ok);
-  // raising the same hamper to 2 needs 4 jars, only 2 exist
-  assert.ok(!rules.checkLine({ ...bag[0], qty: 2, opts: { items: [{ id: 'j1', qty: 2 }] } }, bag).ok);
+  const bag = [{ key: 'a', id: 'h8', qty: 1, opts: { items: [{ id: 't2', qty: 3 }] } }];
+  assert.equal(rules.available('t2', bag), 0);
+  assert.ok(!rules.checkHamper([{ id: 't2', qty: 1 }, { id: 'c1', qty: 1 }], 1, bag).ok);
+  // raising the same hamper to 2 needs 4, only 3 exist
+  assert.ok(!rules.checkLine({ ...bag[0], qty: 2, opts: { items: [{ id: 't2', qty: 2 }] } }, bag).ok);
 });
 
 test('REQ-H6: 2 to 8 pieces and a card message of up to 30 words', () => {

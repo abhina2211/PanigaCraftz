@@ -45,11 +45,11 @@ test('REQ-P4: personalisation over the word limit is rejected', async () => {
 });
 
 test('REQ-H4: a hamper holds stock and cannot take more than there is', async () => {
-  assert.equal(await stock('j1'), 2);
-  await submit([{ id: 'h8', qty: 1, opts: { items: [{ id: 'j1', qty: 2 }, { id: 'c1', qty: 1 }] } }]);
-  assert.equal(await stock('j1'), 0);
+  assert.equal(await stock('t2'), 3); // wooden tea light holder: no shared base
+  await submit([{ id: 'h8', qty: 1, opts: { items: [{ id: 't2', qty: 3 }, { id: 'c1', qty: 1 }] } }]);
+  assert.equal(await stock('t2'), 0);
   assert.equal(await stock('c1'), 7);
-  await assert.rejects(submit([{ id: 'h8', qty: 1, opts: { items: [{ id: 'j1', qty: 1 }, { id: 'c1', qty: 1 }] } }]), /Not enough j1/);
+  await assert.rejects(submit([{ id: 'h8', qty: 1, opts: { items: [{ id: 't2', qty: 1 }, { id: 'c1', qty: 1 }] } }]), /Not enough t2/);
   assert.equal(await stock('c1'), 7, 'a failed enquiry changes nothing');
 });
 

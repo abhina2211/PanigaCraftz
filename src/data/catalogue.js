@@ -103,7 +103,10 @@ export const HAMPER_BUILDER = { base: 15, minItems: 2, maxItems: 8, noteWords: 3
 /* Blank bases shared by several designs (REQ-B1). stock = blanks ready to decorate.
    Placeholder counts until Neha confirms. In Supabase: the bases table. */
 export const BASES = [
-  { id: 'planter-21', name: '21 cm planter on timber base', stock: 3 }
+  { id: 'planter-21', name: '21 cm planter on timber base', stock: 3 },
+  { id: 'candle-jar', name: 'Frosted candle jar', stock: 3 },
+  { id: 'glass-vase', name: 'Glass vase', stock: 3 },
+  { id: 'glass-jar', name: 'Clip-top glass jar', stock: 3 }
 ];
 
 /* What a product shows (REQ-B2): ready-made pieces first ("In stock"), then blanks on
@@ -144,18 +147,18 @@ export const PRODUCTS = [
  P({ id:'p12',cat:'planters', name:'Aztec Stripe Planter', d:'Bold Aztec stripes on an acacia stand.', size:'21 × 21 cm', stock:0, base:'planter-21', img:PL('CQanJlSBMwB'), ig:'CQanJlSBMwB', occ:['housewarming','corporate'], added:13 }),
 
  // Other lines: names from recent Instagram posts; prices and drawn pictures are placeholders.
- P({ id:'c1', cat:'candles', name:'Botanical decoupage candle', d:'Leaf and blossom design on a frosted candle jar, boxed with a satin ribbon.', price:22, img:'/images/products/candle-1.jpg', img2:'/images/products/candle-2.jpg', badge:'Teacher favourite', stock:8, hamper:true, pers:{ label:'Words beside the motif', words:15 }, occ:['teacher','christmas','birthday'], fest:['christmas'], added:60 }),
- P({ id:'c2', cat:'candles', name:'Personalised name candle', d:'A name added to the decoupage design. Popular as thank-you gifts for families and guests.', price:28, stock:5, hamper:true, pers:{ label:'Name or short message', words:10 }, occ:['teacher','housewarming','baby'], fest:['christmas'], added:44, col:['#f8e4e4','#c0403a'] }),
- P({ id:'c3', cat:'candles', name:'Blue rose candle', d:'Made to match the blue rose vase and diffuser set.', price:26, stock:0, hamper:true, occ:['mothersday','housewarming'], added:51, col:['#e3eaf5','#3d5f9a'] }),
+ P({ id:'c1', base:'candle-jar', cat:'candles', name:'Botanical decoupage candle', d:'Leaf and blossom design on a frosted candle jar, boxed with a satin ribbon.', price:22, img:'/images/products/candle-1.jpg', img2:'/images/products/candle-2.jpg', badge:'Teacher favourite', stock:8, hamper:true, pers:{ label:'Words beside the motif', words:15 }, occ:['teacher','christmas','birthday'], fest:['christmas'], added:60 }),
+ P({ id:'c2', base:'candle-jar', cat:'candles', name:'Personalised name candle', d:'A name added to the decoupage design. Popular as thank-you gifts for families and guests.', price:28, stock:5, hamper:true, pers:{ label:'Name or short message', words:10 }, occ:['teacher','housewarming','baby'], fest:['christmas'], added:44, col:['#f8e4e4','#c0403a'] }),
+ P({ id:'c3', base:'candle-jar', cat:'candles', name:'Blue rose candle', d:'Made to match the blue rose vase and diffuser set.', price:26, stock:0, hamper:true, occ:['mothersday','housewarming'], added:51, col:['#e3eaf5','#3d5f9a'] }),
  P({ id:'t1', cat:'tealights', name:'Personalised tea light holder', d:'Decoupaged glass with a name on the front.', price:18, badge:'Personalised', stock:6, hamper:true, pers:{ label:'Name to add', words:3 }, occ:['teacher','birthday'], added:58, col:['#fbefee','#c0403a'] }),
  P({ id:'t2', cat:'tealights', name:'Wooden tea light holder', d:'A unique wooden design, decoupaged by hand.', price:24, stock:3, hamper:true, occ:['housewarming','christmas'], added:43, col:['#f3e6dc','#6e1f24'] }),
  P({ id:'t3', cat:'tealights', name:'Festive glass tea light set', d:'A pair of decorated holders for Diwali evenings.', price:30, badge:'Festive', stock:4, hamper:true, occ:['diwali'], fest:['diwali','eid'], added:20, col:['#fbe9d6','#c0403a'] }),
- P({ id:'v1', cat:'vases', name:'Rose crackle vase', d:'Glass vase with rose decoupage and a crackle effect, her most detailed technique.', price:45, badge:'Signature', occ:['mothersday','housewarming','birthday'], fest:['eid'], added:50, col:['#f8e4e4','#c0403a'] }),
+ P({ id:'v1', base:'glass-vase', cat:'vases', name:'Rose crackle vase', d:'Glass vase with rose decoupage and a crackle effect, her most detailed technique.', price:45, badge:'Signature', occ:['mothersday','housewarming','birthday'], fest:['eid'], added:50, col:['#f8e4e4','#c0403a'] }),
  P({ id:'v2', cat:'vases', name:'Blue rose vase set', d:'Vase, candle and diffuser in matching blue roses.', price:85, occ:['mothersday','housewarming'], fest:['mothersday'], added:52, col:['#e3eaf5','#3d5f9a'] }),
  P({ id:'v3', cat:'vases', name:'Decoupaged bottle vase', d:'An upcycled glass bottle turned into a statement vase.', price:30, pers:{ label:'Message on the bottle', words:50 }, occ:['housewarming','birthday'], added:49, col:['#fbefee','#6e1f24'] }),
- P({ id:'j1', cat:'jars', name:'Decoupaged cookie jar', d:'A glass cookie jar for the kitchen bench, ready to fill with homemade cookies.', price:32, stock:2, hamper:true, occ:['housewarming','christmas'], added:55, col:['#fbefee','#6e1f24'] }),
+ P({ id:'j1', base:'glass-jar', cat:'jars', name:'Decoupaged cookie jar', d:'A glass cookie jar for the kitchen bench, ready to fill with homemade cookies.', price:32, stock:2, hamper:true, occ:['housewarming','christmas'], added:55, col:['#fbefee','#6e1f24'] }),
  P({ id:'j2', cat:'jars', name:'Festive chocolate box', d:'A decorated box to fill with Christmas chocolates.', price:20, badge:'Christmas', stock:10, hamper:true, occ:['christmas','teacher'], fest:['christmas'], added:30, col:['#f8e4e4','#c0403a'] }),
- P({ id:'j3', cat:'jars', name:'Storage jar', d:'Clip-top jar for tea, spices or treats.', price:25, stock:0, hamper:true, occ:['housewarming','diwali'], fest:['diwali'], added:22, col:['#f3e6dc','#c0403a'] }),
+ P({ id:'j3', base:'glass-jar', cat:'jars', name:'Storage jar', d:'Clip-top jar for tea, spices or treats.', price:25, stock:0, hamper:true, occ:['housewarming','diwali'], fest:['diwali'], added:22, col:['#f3e6dc','#c0403a'] }),
  P({ id:'d1', cat:'decor', name:'Decoupaged bathroom set', d:'Matching bathroom pieces. One customer came back after six years for the same set for a friend.', price:75, occ:['housewarming'], added:56, col:['#e3eaf5','#6e1f24'] }),
  P({ id:'d2', cat:'decor', name:'Travel-theme coasters', d:'A set of coasters for people who love to travel.', price:28, stock:4, hamper:true, occ:['birthday','christmas','corporate'], added:47, col:['#fbefee','#3d5f9a'] }),
  P({ id:'d3', cat:'decor', name:'Cutlery or pen stand', d:'Amsterdam-inspired stand for cutlery, pens or makeup brushes.', price:30, stock:3, hamper:true, occ:['housewarming','teacher','corporate'], added:42, col:['#f3e6dc','#c0403a'] }),

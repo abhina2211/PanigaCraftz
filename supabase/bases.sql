@@ -95,9 +95,17 @@ begin new.updated_at := now(); return new; end $$;
 drop trigger if exists trg_bases_touch on bases;
 create trigger trg_bases_touch before update on bases for each row execute function bases_touch();
 
--- Starting data: the 21 cm timber-base planter shared by Bluebell and Aztec Stripe.
--- The count of 3 blanks is a placeholder: Neha sets the real number in the admin panel.
-insert into bases (id, name, stock_qty, notes)
-values ('planter-21', '21 cm planter on timber base', 3, 'Used by Bluebell Timber-Base and Aztec Stripe planters')
+-- Starting data (REQ-B7): planters, candles, vases and jars share blanks. Counts of 3 are
+-- placeholders: Neha sets the real numbers and links other designs in the admin panel.
+-- Running this again adds any base that is missing and links designs that have no base
+-- yet; it never changes a count or a link Neha has set.
+insert into bases (id, name, stock_qty, notes) values
+  ('planter-21', '21 cm planter on timber base', 3, 'Bluebell Timber-Base and Aztec Stripe planters'),
+  ('candle-jar', 'Frosted candle jar', 3, 'Botanical, personalised name and blue rose candles'),
+  ('glass-vase', 'Glass vase', 3, 'Rose crackle vase'),
+  ('glass-jar', 'Clip-top glass jar', 3, 'Cookie jar and storage jar')
 on conflict (id) do nothing;
 update products set base_id = 'planter-21' where id in ('p11', 'p12') and base_id is null;
+update products set base_id = 'candle-jar' where id in ('c1', 'c2', 'c3') and base_id is null;
+update products set base_id = 'glass-vase' where id in ('v1') and base_id is null;
+update products set base_id = 'glass-jar' where id in ('j1', 'j3') and base_id is null;

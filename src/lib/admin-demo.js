@@ -26,6 +26,7 @@ export function demoClient() {
   const bases = BASES.map(b => ({ id: b.id, name: b.name, stock_qty: b.stock, active: true }));
   const tables = { products, enquiries, bases };
   let session = null;
+  const photos = {};
   const query = table => {
     let rows = tables[table], patch = null, id = null, added = null;
     const q = {
@@ -48,6 +49,10 @@ export function demoClient() {
       signOut: async () => { session = null; }
     },
     rpc: async () => ({ data: true }),
+    storage: { from: () => ({
+      upload: async (path, blob) => { photos[path] = URL.createObjectURL(blob); return { data: { path }, error: null }; },
+      getPublicUrl: path => ({ data: { publicUrl: photos[path] } })
+    }) },
     from: query
   };
 }
