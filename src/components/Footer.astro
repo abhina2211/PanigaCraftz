@@ -1,0 +1,22 @@
+---
+/* Footer, the enquiry list drawer and the toast: on every page. */
+import { CATEGORIES, HAMPER_TYPES, IG } from '../data/catalogue.js';
+---
+<footer class="band"><div class="wrap">
+  <div><h3>PanigaCraftz</h3><p style="margin:0">Handmade decoupage planters, décor, personalised gifts and hampers. Sydney based, shipping Australia-wide (New Zealand on request). Orders by Instagram DM.</p></div>
+  <div><h3>Products</h3>{CATEGORIES.filter(c => c.id !== 'hampers').map(c => <a href={`/#${c.id}`} data-cat={c.id}>{c.name}</a>)}</div>
+  <div><h3>Hampers</h3>{HAMPER_TYPES.map(h => <a href={`/#hampers-${h.id}`} data-ht={h.id}>{h.name}</a>)}<a href="/#build" data-build>Build your own</a></div>
+  <div><h3>Help</h3><a href="/#custom">Custom orders</a><a href="/#about">About</a><a href={`https://www.instagram.com/${IG}/`}>Instagram</a></div>
+</div></footer>
+
+<aside class="drawer" id="drawer" aria-label="Enquiry list">
+  <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="font-size:28px">Enquiry list</h2><button class="x" id="closeBag" aria-label="Close">×</button></div>
+  <ul id="bagList"></ul>
+  <div id="bagFoot">
+    <p class="ship" id="shipMsg"></p><div class="shipbar"><i id="shipBar"></i></div>
+    <div class="totals"><div><span>Subtotal</span><span id="bagSub"></span></div><div><span>Shipping estimate</span><span id="bagShip"></span></div><div class="grand"><span>Estimated total</span><span id="bagTotal"></span></div></div>
+    <button class="btn" id="copyBag" style="width:100%">Copy message for Instagram</button>
+    <a class="btn ghost" style="margin-top:10px;width:100%" href={`https://ig.me/m/${IG}`} id="dmBag">Open Instagram DM</a>
+  </div>
+</aside>
+<div class="toast" id="toast" role="status"></div>

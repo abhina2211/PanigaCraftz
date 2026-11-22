@@ -2,59 +2,65 @@
 
 Storefront for PanigaCraftz, Neha Koolwal's handmade decoupage business in Sydney (Instagram @panigacraftz_neha).
 
-This folder is the single working version. It merges:
-
-- **The Claude chat design** (22 Nov 2026): logo and colour theme, header with Products and Hampers dropdowns, hero carousel, Recent products, Shop by category, Quick view, enquiry list, 7 categories from her recent Instagram posts.
-- **The other project** (`C:\work\NehaWebsite\panigaCraftz\panigaCraftz`, handover pack of 19 Nov): the 12 planters with real photos, names and sizes, the festival engine, personalisation (name, packaging, gift note), the 3-step custom order form with Australian validation, `BACKEND HOOK` markers, the "From our Instagram" strip, and the Supabase + Stripe plan.
-
-The old folder was only read; nothing in it was changed.
-
 Requirements and the delivery plan live in [`docs/requirements.md`](docs/requirements.md), which is versioned: update it with every change to what the site must do.
+
+The site is built with [Astro](https://astro.build). Astro turns the files in `src/` into plain HTML pages at build time, one page per product from a single template. The browser scripts add the interactive parts (filters, quick view, enquiry list, hamper builder).
 
 ## Run it
 
-No build step. Open `index.html` in a browser, or serve the folder:
+Needs Node.js 22 or later.
 
 ```
-npx serve .
+npm install        # once, downloads Astro and Tailwind into node_modules/
+npm run dev        # local site at http://localhost:4321, reloads on save
+npm test           # checks the business rules (word limits, hamper stock)
+npm run build      # writes the finished site to dist/
+npm run preview    # serves dist/ to check the build
 ```
 
 ## Files
 
 | Path | What it is |
 |---|---|
-| `index.html` | Page structure |
-| `css/styles.css` | All styles (theme colours at the top, taken from the logo) |
-| `js/data.js` | **Edit this to change products, prices, categories, occasions and festival dates** |
-| `js/rules.js` | Business rules shared by every screen: personalisation word limits, hamper stock checks |
-| `docs/requirements.md` | Versioned requirements, delivery plan and change log |
+| `src/data/catalogue.js` | **Edit this to change products, prices, stock, word limits, categories, occasions and festival dates.** Moves to Supabase in phase 3 |
+| `src/lib/rules.js` | Business rules shared by every page and the tests: personalisation word limits, hamper stock checks |
+| `src/lib/pictures.js` | Drawn placeholder pictures for products without photos |
+| `src/pages/index.astro` | Home page |
+| `src/pages/products/[slug].astro` | The one template that makes every product page, e.g. `/products/decoupaged-bottle-vase/` |
+| `src/layouts/Base.astro` | Page shell: head tags, header, footer |
+| `src/components/` | Header (menus built from the catalogue) and footer with the enquiry list drawer |
+| `src/scripts/core.js` | Browser code for every page: festival bar, menus, enquiry list |
+| `src/scripts/home.js` | Home page: carousel, shop filters, quick view, hamper builder, custom order form |
+| `src/scripts/product.js` | Product page: personalisation and add to enquiry |
+| `src/styles/global.css` | All styles (theme colours at the top, taken from the logo). Tailwind classes also work |
+| `public/images/` | Logo and product photos, served as they are |
+| `tests/` | Tests for `rules.js` |
 | `supabase/schema.sql` | Draft database schema that enforces the same rules (not applied yet) |
-| `js/app.js` | Storefront behaviour: carousel, filters, quick view, enquiry list, custom order form, festival engine |
-| `images/logo.png` | Logo, cropped from the Instagram profile picture (150 px source; replace with the original file when available) |
-| `images/planters/` | 18 planter photos from Instagram (owner's permission noted in the handover pack) |
-| `images/products/` | Other product photos |
+| `docs/requirements.md` | Versioned requirements, delivery plan and change log |
 
 ## Features
 
-- **Festival engine.** The announcement bar, its order-by countdown and the first hero slide follow the next festival in `FESTIVALS` (Christmas, Lunar New Year, Eid, Mother's Day, Diwali). Add `#preview` to the URL to show an admin pill that previews each festival.
-- **Shareable links** for Instagram posts and the bio: `#planters`, `#candles`, `#hampers`, `#hampers-festive`, `#hampers-personal`, `#hampers-corporate`, `#gifts-teacher`, `#gifts-christmas`, `#gifts-housewarming` and so on.
+- **A page per product** at `/products/<name>/`, with its own title and preview image for sharing on Instagram and WhatsApp.
+- **Festival engine.** The announcement bar, its order-by countdown and the first hero slide follow the next festival in `FESTIVALS`. Add `#preview` to the home page URL to show an admin pill that previews each festival.
+- **Shareable links** for Instagram posts and the bio: `/#planters`, `/#candles`, `/#hampers`, `/#hampers-festive`, `/#gifts-teacher`, `/#build` and so on.
 - **Shop filters** by category, hamper type, occasion and price band, with sorting.
-- **Quick view** with personalisation for items marked `pers`, each with its own label and word limit (for example 50 words on the bottle vase), and previous and next arrows.
-- **Build your own hamper** (`#build`): pick 2 to 8 pieces from what is in stock. Stock counts are in `js/data.js` (`stock`, `hamper`).
-- **Enquiry list**: same product with the same personalisation becomes one line. Shows a shipping estimate and copies a ready-to-send Instagram DM. Saved in the visitor's browser.
+- **Personalisation** only on products marked `pers`, each with its own label and word limit (for example 50 words on the bottle vase), in quick view and on the product page.
+- **Build your own hamper** (`/#build`): pick 2 to 8 pieces from what is in stock. Stock counts are in the catalogue (`stock`, `hamper`).
+- **Enquiry list**: same product with the same personalisation becomes one line. Shows a shipping estimate and copies a ready-to-send Instagram DM. Saved in the visitor's browser and shared across pages.
 - **Custom order form** in 3 steps, with a reference number and a message to copy.
-- **Stock status** (`in`, `made`, `sold`) shows only where it is known.
 
 ## Placeholders still to replace
 
 - Prices: all are placeholders except the Rose Mummy & Baby Planter Set ($55). Four planters show "Price on enquiry".
-- Drawn pictures stand in for products without photos (everything except planters and the botanical candle).
+- Stock counts, word limits and the hamper fee (see open questions in the requirements doc).
+- Drawn pictures stand in for products without photos.
 - Corporate hampers are suggestions, not yet in her posts.
-- Shipping estimate ($12.95 flat, free over $120) is the prototype's placeholder.
+- Shipping estimate ($12.95 flat, free over $120).
 - Festival dates for 2027 need confirming each year.
+- The domain in `astro.config.mjs` (`site`) is a placeholder.
 
-## Next steps (from the website plan)
+## Branches
 
-1. Move to **Astro + Tailwind** so each product gets its own page from one template, then connect **Supabase** (products, festivals, enquiries, `interest_events`) and the admin screens. The `BACKEND HOOK` comments in `js/app.js` mark where the database calls go.
-2. **Stripe Checkout** and Australia Post shipping quotes in January 2027.
-3. Put this folder in a **GitHub repository** and deploy to Cloudflare Pages or Netlify.
+- `main`: what is live.
+- `development`: finished features waiting to go live.
+- `feature/...`: work in progress, branched from `development` and merged back into it.

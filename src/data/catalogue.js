@@ -1,10 +1,12 @@
 /* PanigaCraftz catalogue data.
    One place for products, categories, hamper types, occasions and festivals.
-   In the planned Astro + Supabase build these become database tables
-   (products, categories, festivals); until then, edit this file.
+   Astro reads this at build time to make the menus and one page per product;
+   the browser scripts import it too. In phase 3 the products come from Supabase
+   (see supabase/schema.sql); until then, edit this file.
 
    Product fields
    id        unique id
+   slug      web address of the product page (/products/<slug>/), made from the name
    cat       category id (see CATEGORIES)
    ht        hamper type id, hampers only (see HAMPER_TYPES)
    name, d   name and description
@@ -26,10 +28,9 @@
    ig        Instagram post id the product came from, if known
    sample    true when name/price are placeholders written by Claude, not confirmed by Neha
 */
-window.PC = (() => {
-const IG = 'panigacraftz_neha';
+export const IG = 'panigacraftz_neha';
 
-const CATEGORIES = [
+export const CATEGORIES = [
   { id: 'planters',  name: 'Planters',          blurb: 'Our signature decoupage pots' },
   { id: 'candles',   name: 'Candles',           blurb: 'Decoupaged and personalised' },
   { id: 'tealights', name: 'Tea light holders', blurb: 'Glass, wooden and named' },
@@ -39,13 +40,13 @@ const CATEGORIES = [
   { id: 'hampers',   name: 'Gift hampers',      blurb: 'Festive, personal, corporate' }
 ];
 
-const HAMPER_TYPES = [
+export const HAMPER_TYPES = [
   { id: 'festive',   name: 'Festive hampers',   blurb: 'Christmas, Diwali, Lunar New Year, Eid' },
   { id: 'personal',  name: 'Personal hampers',  blurb: 'Teachers, birthdays, babies, anniversaries' },
   { id: 'corporate', name: 'Corporate hampers', blurb: 'Client and staff thank-yous, 10 to 500 boxes' }
 ];
 
-const OCCASIONS = [
+export const OCCASIONS = [
   { id: 'teacher',     name: 'Teacher & year-end' },
   { id: 'christmas',   name: 'Christmas & Kris Kringle' },
   { id: 'diwali',      name: 'Diwali & Rakhi' },
@@ -58,54 +59,55 @@ const OCCASIONS = [
 
 /* Festival engine (from the festival prototype). The site picks the nearest
    festival whose date hasn't passed. Dates need confirming each year. */
-const FESTIVALS = {
+export const FESTIVALS = {
   christmas: { name: 'Christmas', date: '2026-12-25', orderBy: '2026-12-15', accent: '#1f5f45',
     announcement: 'Christmas and teacher gifts: order by 15 Dec for Australia-wide delivery',
     eyebrow: 'Christmas collection 2026', headline: 'A handmade Christmas, wrapped with love',
     sub: 'Personalised candles, decoupage planters and hampers for family, teachers and Kris Kringle.',
-    cta: 'Shop Christmas gifts', occ: 'christmas', packaging: 'Christmas red & gold', img: 'images/products/candle-1.jpg',
+    cta: 'Shop Christmas gifts', occ: 'christmas', packaging: 'Christmas red & gold', img: '/images/products/candle-1.jpg',
     featured: ['h5', 'c1', 'p8', 'h1'] },
   lunar: { name: 'Lunar New Year', date: '2027-02-06', orderBy: '2027-01-27', accent: '#b3202a',
     announcement: 'Lunar New Year gifts: order by 27 Jan for Australia-wide delivery',
     eyebrow: 'Lunar New Year 2027', headline: 'Gift good fortune for the new year',
     sub: 'Blue-and-white willow planters and prosperity hampers for family and clients.',
-    cta: 'Shop Lunar New Year', occ: 'corporate', packaging: 'Lunar crimson & gold', img: 'images/planters/CYlPJjtlT9n.jpg',
+    cta: 'Shop Lunar New Year', occ: 'corporate', packaging: 'Lunar crimson & gold', img: '/images/planters/CYlPJjtlT9n.jpg',
     featured: ['p6', 'h6', 'p1', 't2'] },
   eid: { name: 'Eid', date: '2027-03-10', orderBy: '2027-02-28', accent: '#17635f',
     announcement: 'Eid gifts: order by 28 Feb for Australia-wide delivery',
     eyebrow: 'Eid al-Fitr collection', headline: 'Eid Mubarak, beautifully handmade',
     sub: 'Tea light holders, rose planters and hampers finished by hand.',
-    cta: 'Shop Eid gifts', occ: 'birthday', packaging: 'Eid emerald & gold', img: 'images/planters/CX__oHHB4Pj.jpg',
+    cta: 'Shop Eid gifts', occ: 'birthday', packaging: 'Eid emerald & gold', img: '/images/planters/CX__oHHB4Pj.jpg',
     featured: ['p7', 't3', 'h2', 'v1'] },
   mothersday: { name: "Mother's Day", date: '2027-05-09', orderBy: '2027-05-01', accent: '#a84f6e',
     announcement: "Mother's Day gifts: order by 1 May for Australia-wide delivery",
     eyebrow: "Mother's Day 2027", headline: 'For the woman who grew everything',
     sub: 'Rose planter sets, blue rose vases and pamper hampers she will keep for years.',
-    cta: "Shop Mother's Day", occ: 'mothersday', packaging: "Mother's Day rose & sage", img: 'images/planters/CK5eCbqhQjs.jpg',
+    cta: "Shop Mother's Day", occ: 'mothersday', packaging: "Mother's Day rose & sage", img: '/images/planters/CK5eCbqhQjs.jpg',
     featured: ['p3', 'v2', 'h2', 'p7'] },
   diwali: { name: 'Diwali', date: '2027-10-29', orderBy: '2027-10-19', accent: '#5b2a86',
     announcement: 'Diwali hampers and tea lights: order by 19 Oct for Australia-wide delivery',
     eyebrow: 'Diwali, the festival of lights', headline: 'Light up Diwali with something handmade',
     sub: 'Marigold planters, decorated tea light sets and Diwali hampers.',
-    cta: 'Shop Diwali gifts', occ: 'diwali', packaging: 'Diwali marigold & purple', img: 'images/planters/CYWFXeIFDyK.jpg',
+    cta: 'Shop Diwali gifts', occ: 'diwali', packaging: 'Diwali marigold & purple', img: '/images/planters/CYWFXeIFDyK.jpg',
     featured: ['p4', 'h4', 't3', 'j3'] }
 };
-const PACKAGING_DEFAULT = 'Classic kraft with ribbon';
+export const PACKAGING_DEFAULT = 'Classic kraft with ribbon';
 
 /* Personalisation used when a product just says pers: true (REQ-P2). */
-const PERS_DEFAULT = { label: 'Name to add', words: 5 };
+export const PERS_DEFAULT = { label: 'Name to add', words: 5 };
 
 /* Build-your-own hamper (REQ-H1..H5). Fee and limits are placeholders to confirm with Neha. */
-const HAMPER_BUILDER = { base: 15, minItems: 2, maxItems: 8, noteWords: 30 };
+export const HAMPER_BUILDER = { base: 15, minItems: 2, maxItems: 8, noteWords: 30 };
 
 const P = (o) => {
   const p = Object.assign({ price: null, size: '', status: null, stock: null, hamper: false, pers: false, occ: [], fest: [], added: 0, sample: true }, o);
   if (typeof p.stock === 'number' && !p.status) p.status = p.stock > 0 ? 'in' : 'sold';
+  p.slug = p.slug || p.name.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   return p;
 };
-const PL = id => `images/planters/${id}.jpg`;
+const PL = id => `/images/planters/${id}.jpg`;
 
-const PRODUCTS = [
+export const PRODUCTS = [
  // Planters: real photos and names from the other project (images/planters/<post id>.jpg).
  // Prices are prototype placeholders except Rose Mummy & Baby ($55, from the caption).
  P({ id:'p1', cat:'planters', name:'Blue Tile Planter on Stand', d:'Our first and best-selling design. Hand-decoupaged blue tile pattern on a timber stand, sealed for indoor and covered outdoor use.', price:69, img:PL('CLDJx4NBfqU'), ig:'CLDJx4NBfqU', badge:'Bestseller', occ:['housewarming','birthday'], fest:['lunar'], added:12 }),
@@ -122,7 +124,7 @@ const PRODUCTS = [
  P({ id:'p12',cat:'planters', name:'Aztec Stripe Planter', d:'Bold Aztec stripes on an acacia stand.', size:'21 × 21 cm', img:PL('CQanJlSBMwB'), ig:'CQanJlSBMwB', occ:['housewarming','corporate'], added:13 }),
 
  // Other lines: names from recent Instagram posts; prices and drawn pictures are placeholders.
- P({ id:'c1', cat:'candles', name:'Botanical decoupage candle', d:'Leaf and blossom design on a frosted candle jar, boxed with a satin ribbon.', price:22, img:'images/products/candle-1.jpg', img2:'images/products/candle-2.jpg', badge:'Teacher favourite', stock:8, hamper:true, pers:{ label:'Words beside the motif', words:15 }, occ:['teacher','christmas','birthday'], fest:['christmas'], added:60 }),
+ P({ id:'c1', cat:'candles', name:'Botanical decoupage candle', d:'Leaf and blossom design on a frosted candle jar, boxed with a satin ribbon.', price:22, img:'/images/products/candle-1.jpg', img2:'/images/products/candle-2.jpg', badge:'Teacher favourite', stock:8, hamper:true, pers:{ label:'Words beside the motif', words:15 }, occ:['teacher','christmas','birthday'], fest:['christmas'], added:60 }),
  P({ id:'c2', cat:'candles', name:'Personalised name candle', d:'A name added to the decoupage design. Popular as thank-you gifts for families and guests.', price:28, stock:5, hamper:true, pers:{ label:'Name or short message', words:10 }, occ:['teacher','housewarming','baby'], fest:['christmas'], added:44, col:['#f8e4e4','#c0403a'] }),
  P({ id:'c3', cat:'candles', name:'Blue rose candle', d:'Made to match the blue rose vase and diffuser set.', price:26, stock:0, hamper:true, occ:['mothersday','housewarming'], added:51, col:['#e3eaf5','#3d5f9a'] }),
  P({ id:'t1', cat:'tealights', name:'Personalised tea light holder', d:'Decoupaged glass with a name on the front.', price:18, badge:'Personalised', stock:6, hamper:true, pers:{ label:'Name to add', words:3 }, occ:['teacher','birthday'], added:58, col:['#fbefee','#c0403a'] }),
@@ -148,13 +150,11 @@ const PRODUCTS = [
 ];
 
 /* Homepage "From our Instagram" strip (curated, not a live feed). */
-const IG_STRIP = [
+export const IG_STRIP = [
   { id:'DPEGeUTk78W', kind:'reel' }, { id:'CXRyM3YB4QH', kind:'p' }, { id:'CRc1T-EhCqx', kind:'p' },
   { id:'CMOAVAsh4mt', kind:'p' }, { id:'CMDcy4HhpiE', kind:'p' }, { id:'CJCjqg2BeBM', kind:'p' }
 ];
 
 /* Shipping estimate shown in the enquiry list (placeholder from the prototype; final rates via Australia Post later). */
-const SHIPPING = { flat: 12.95, freeOver: 120 };
+export const SHIPPING = { flat: 12.95, freeOver: 120 };
 
-return { IG, CATEGORIES, HAMPER_TYPES, OCCASIONS, FESTIVALS, PACKAGING_DEFAULT, PERS_DEFAULT, HAMPER_BUILDER, PRODUCTS, IG_STRIP, SHIPPING };
-})();
