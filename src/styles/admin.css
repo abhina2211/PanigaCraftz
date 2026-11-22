@@ -137,3 +137,61 @@
 .adm-form .adm-toggle{display:flex}
 .adm-form .adm-toggle input{width:52px;height:32px;min-height:0;padding:0;border:0;border-radius:99px}
 .adm-row-main b{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.25}
+
+/* ---- quick edit in the products list (REQ-A11..A13) ---- */
+.adm-topbtn{border:0;border-radius:10px;background:rgba(255,255,255,.16);color:#fff;font:800 15px "Nunito Sans",sans-serif;min-height:40px;padding:0 14px;cursor:pointer}
+.adm-qcard{background:var(--card);border-radius:18px;padding:12px;box-shadow:0 1px 2px rgba(60,10,15,.08);position:relative}
+.adm-qcard.off .adm-q1{opacity:.6}
+.adm-qcard.sel{outline:2.5px solid var(--red)}
+.adm-q1{display:flex;align-items:center;gap:12px}
+.adm-qlink{display:flex;align-items:center;gap:12px;flex:1;min-width:0;color:var(--ink);text-decoration:none}
+.adm-price{flex:none;min-height:44px;min-width:64px;padding:0 10px;border:1.5px dashed #d9c4c3;border-radius:12px;background:var(--bg);font:800 16px "Nunito Sans",sans-serif;color:var(--ink);cursor:pointer}
+.adm-price.none{font-size:13px;color:var(--mute)}
+.adm-q2{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.adm-q2 .end{text-align:right}
+.adm-lab{display:block;font-size:12px;font-weight:800;color:var(--mute);margin-bottom:4px}
+.adm-mini{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:14px;overflow:hidden}
+.adm-mini button{width:46px;height:46px;border:0;background:var(--soft);font-size:22px;font-weight:800;color:var(--ink);cursor:pointer}
+.adm-mini button:disabled{opacity:.35}
+.adm-mini output{min-width:46px;text-align:center;font-weight:800;font-size:18px}
+.adm-pchip{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;border-radius:12px;border:0;background:var(--blushbg);color:var(--red-ink);font:800 14px "Nunito Sans",sans-serif;cursor:pointer;white-space:nowrap;text-decoration:none}
+.adm-pchip.off{background:#f1eded;color:var(--mute)}
+.adm-q3{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.adm-sw{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:48px;background:var(--soft);border-radius:12px;padding:6px 10px;font-weight:700;font-size:14px;cursor:pointer}
+.adm-sw input{appearance:none;flex:none;width:46px;height:28px;border-radius:99px;background:#cfc6c6;position:relative;cursor:pointer;margin:0}
+.adm-sw input::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .2s}
+.adm-sw input:checked{background:#2e8b57}.adm-sw input:checked::after{transform:translateX(18px)}
+.adm-sw input:disabled{opacity:.4;cursor:not-allowed}
+.adm-sw.na{color:var(--mute)}
+.adm-saved{position:absolute;top:8px;right:12px;font-size:12px;font-weight:800;color:#22663d}
+.adm-check{width:28px;height:28px;flex:none;border-radius:8px;border:2px solid #cbbcbc;display:grid;place-items:center;color:#fff;font-weight:900}
+.adm-qcard.sel .adm-check{background:var(--red);border-color:var(--red)}
+.adm-selecting .adm-qcard{cursor:pointer}
+/* bulk bar */
+.adm-bulk{position:fixed;left:0;right:0;bottom:0;z-index:32;background:#2b1b1c;color:#fff;padding:12px 12px calc(14px + env(safe-area-inset-bottom))}
+.adm-bulk b{display:block;margin-bottom:10px}
+.adm-bulk div{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.adm-bulk button{min-height:46px;border-radius:12px;border:0;background:rgba(255,255,255,.14);color:#fff;font:800 14px "Nunito Sans",sans-serif;cursor:pointer}
+.adm-bulk button:disabled{opacity:.4}
+.adm-app.bulk-on{padding-bottom:260px}
+/* toast with undo */
+.adm-toast{display:flex;align-items:center;gap:12px}
+.adm-toast button{border:0;background:none;color:#f3b7b3;font:800 16px "Nunito Sans",sans-serif;cursor:pointer;padding:6px 4px;min-height:40px}
+/* bottom sheet */
+.adm-sheet{margin:auto 0 0;max-width:none;width:100%;border:0;border-radius:22px 22px 0 0;padding:10px 16px calc(18px + env(safe-area-inset-bottom));background:var(--bg);color:var(--ink)}
+.adm-sheet::backdrop{background:rgba(40,12,15,.5)}
+.adm-grab{width:44px;height:5px;border-radius:9px;background:#ddd;margin:0 auto 12px}
+.adm-sheet h3{font-size:21px;margin:0 0 2px}
+.adm-sheet .sub{color:var(--mute);margin:0 0 14px;font-size:14px}
+.adm-sheet label.f{display:grid;gap:6px;font-weight:700;margin-bottom:12px}
+.adm-sheet input[type=text],.adm-sheet input[type=number]{font-size:18px;min-height:52px;padding:10px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);width:100%}
+.adm-presets{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:6px 0 10px}
+.adm-presets button{min-height:46px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);font:800 16px "Nunito Sans",sans-serif;color:var(--ink);cursor:pointer}
+.adm-presets button[aria-pressed=true]{border-color:var(--red);background:var(--blushbg);color:var(--red-ink)}
+.adm-sheet-actions{display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-top:16px}
+@media (min-width:900px){.adm-sheet{max-width:480px;margin:auto;border-radius:22px}.adm-bulk{left:220px}}
+/* toast: full width on phones so the message and Undo fit on one line */
+.adm-toast{left:12px;right:12px;bottom:calc(78px + env(safe-area-inset-bottom));transform:translateY(20px);max-width:none;text-align:left;justify-content:space-between}
+.adm-toast.show{transform:none}
+.adm-app.bulk-on~.adm-toast{bottom:calc(270px + env(safe-area-inset-bottom))}
+@media (min-width:900px){.adm-toast{left:calc(50% - 110px);right:auto;width:440px}}
