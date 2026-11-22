@@ -3,7 +3,7 @@
    quick view, enquiry list) with the festival prototype (festival engine, personalisation,
    3-step custom order form). Lines marked BACKEND HOOK are where Supabase calls go later. */
 {
-const { IG, CATEGORIES, HAMPER_TYPES, OCCASIONS, FESTIVALS, PACKAGING_DEFAULT, PRODUCTS, IG_STRIP, SHIPPING } = window.PC;
+const { IG, CATEGORIES, HAMPER_TYPES, OCCASIONS, FESTIVALS, PACKAGING_DEFAULT, HAMPER_BUILDER, PRODUCTS, IG_STRIP, SHIPPING, rules } = window.PC;
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -81,7 +81,7 @@ $('.hero').addEventListener('mouseleave', auto);
 const catPic = { candles: ['#f8e4e4', '#c0403a'], tealights: ['#f3e6dc', '#6e1f24'], vases: ['#f8e4e4', '#c0403a'], jars: ['#f3e6dc', '#c0403a'], decor: ['#e3eaf5', '#c0403a'], hampers: ['#f8e4e4', '#6e1f24'] };
 const catImg = c => c.id === 'planters' ? `<img src="images/planters/CX__oHHB4Pj.jpg" alt="" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px">` : c.id === 'candles' ? `<img src="images/products/candle-1.jpg" alt="" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px">` : pic(c.id, ...catPic[c.id]);
 $('#dropProducts').innerHTML = CATEGORIES.filter(c => c.id !== 'hampers').map(c => `<li><a href="#${c.id}" data-cat="${c.id}">${c.name}<small>${c.blurb}</small></a></li>`).join('') + `<li><a href="#shop" data-cat="all">All products<small>Everything in one place</small></a></li>`;
-$('#dropHampers').innerHTML = HAMPER_TYPES.map(h => `<li><a href="#hampers-${h.id}" data-ht="${h.id}">${h.name}<small>${h.blurb}</small></a></li>`).join('') + `<li><a href="#hampers" data-cat="hampers">All hampers<small>Every hamper we make</small></a></li>`;
+$('#dropHampers').innerHTML = HAMPER_TYPES.map(h => `<li><a href="#hampers-${h.id}" data-ht="${h.id}">${h.name}<small>${h.blurb}</small></a></li>`).join('') + `<li><a href="#build" data-build>Build your own hamper<small>Pick from what's in stock</small></a></li><li><a href="#hampers" data-cat="hampers">All hampers<small>Every hamper we make</small></a></li>`;
 $('#footCats').innerHTML = CATEGORIES.filter(c => c.id !== 'hampers').map(c => `<button data-cat="${c.id}">${c.name}</button>`).join('');
 $('#footHampers').innerHTML = HAMPER_TYPES.map(h => `<button data-ht="${h.id}">${h.name}</button>`).join('');
 $('#cats').innerHTML = CATEGORIES.map(c => `<button class="cat" data-cat="${c.id}">${catImg(c)}<b>${c.name}</b><small>${c.blurb}</small></button>`).join('');
@@ -93,7 +93,7 @@ $('#fbuttons').innerHTML = [['auto', 'Auto (by date)'], ...Object.entries(FESTIV
 const recentIds = [...PRODUCTS].sort((a, b) => b.added - a.added).slice(0, 6).map(p => p.id);
 const card = p => `<article class="p"><div class="img">${imgOf(p)}${p.badge ? `<span class="badge">${esc(p.badge)}</span>` : recentIds.includes(p.id) ? '<span class="badge new">New</span>' : ''}<button class="qv" data-quick="${p.id}" aria-label="Quick view: ${esc(p.name)}">Quick view</button></div>
  <div class="body"><span class="cat-l">${p.ht ? htName(p.ht) : catName(p.cat)}</span><h3>${esc(p.name)}</h3>${p.size || p.status ? `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">${statusHtml(p)}${p.size ? `<span class="size">${esc(p.size)}</span>` : ''}</div>` : ''}<p>${esc(p.d.split('. ')[0].replace(/\.$/, ''))}.</p>
- <div class="row"><span class="price"${p.price == null ? ' style="font-size:16px"' : ''}>${priceText(p)}</span><button class="btn" data-add="${p.id}"${p.status === 'sold' ? ' disabled' : ''}>Add</button></div></div></article>`;
+ <div class="row"><span class="price"${p.price == null ? ' style="font-size:16px"' : ''}>${priceText(p)}</span>${p.builder ? `<button class="btn" data-build>Build</button>` : `<button class="btn" data-add="${p.id}"${p.status === 'sold' ? ' disabled' : ''}>Add</button>`}</div></div></article>`;
 $('#rail').innerHTML = recentIds.map(id => card(byId(id))).join('');
 
 /* ---------- shop: filters, price band, sort, shareable hash links ---------- */
@@ -121,6 +121,7 @@ const goShop = () => { closeMenu(); $('#shop').scrollIntoView({ behavior: reduce
 function fromHash() {
   const h = location.hash.slice(1);
   if (h === 'preview') { $('#fpreview').classList.add('on'); return false; }
+  if (h === 'build') return false;
   let m;
   if (CATEGORIES.some(c => c.id === h)) { filter = h; ht = null; occ = null; }
   else if ((m = h.match(/^hampers-(\w+)$/)) && HAMPER_TYPES.some(x => x.id === m[1])) { filter = 'hampers'; ht = m[1]; occ = null; }
@@ -145,12 +146,15 @@ function fillQuick() {
   $('#qStatus').innerHTML = statusHtml(p); $('#qSize').textContent = p.size || '';
   $('#qDesc').textContent = p.d;
   $('#qList').innerHTML = ['Decorated by hand with decoupage, so each piece is unique', 'Gift-wrapped and ready to give', 'Ships Australia-wide, or pick up in Sydney'].map(s => `<li>${s}</li>`).join('');
-  $('#qPers').hidden = !p.pers;
-  $('#qEngrave').value = ''; $('#qEngravePreview').textContent = ''; $('#qNote').value = ''; $('#qNoteCount').textContent = '0 / 150';
+  const pc = rules.persOf(p);
+  $('#qPers').hidden = !pc;
+  if (pc) { $('#qPersLabel').textContent = pc.label; $('#qPersText').placeholder = pc.words <= 5 ? 'e.g. Ms Lee' : 'Your message'; }
+  $('#qPersText').value = ''; $('#qNote').value = ''; $('#qNoteCount').textContent = '0 / 150';
   $('#qPack').innerHTML = packOptions(fest ? fest.packaging : PACKAGING_DEFAULT);
   $('#qTags').innerHTML = p.occ.map(o => `<span>${esc(occName(o))}</span>`).join('');
   $('#qQty').textContent = qq;
-  $('#qAdd').disabled = p.status === 'sold'; $('#qAdd').textContent = p.status === 'sold' ? 'Sold out' : 'Add to enquiry';
+  $('#qAdd').disabled = p.status === 'sold'; $('#qAdd').textContent = p.status === 'sold' ? 'Sold out' : p.builder ? 'Start building' : 'Add to enquiry';
+  persInput();
   const ig = $('#qIg'); ig.hidden = !p.ig; if (p.ig) ig.href = igPost(p.ig);
   $('#qPrev').hidden = $('#qNext').hidden = qset.length < 2;
 }
@@ -159,30 +163,61 @@ $('#qClose').onclick = () => dlg.close();
 $('#qPrev').onclick = () => stepQuick(-1); $('#qNext').onclick = () => stepQuick(1);
 $('#qMinus').onclick = () => { qq = Math.max(1, qq - 1); $('#qQty').textContent = qq; };
 $('#qPlus').onclick = () => { qq = Math.min(500, qq + 1); $('#qQty').textContent = qq; };
-$('#qEngrave').oninput = e => { $('#qEngravePreview').textContent = e.target.value; };
+/* REQ-P3: live word count; Add is blocked while the text is over the product's limit. */
+function persInput() {
+  const p = byId(qid), pc = rules.persOf(p), text = $('#qPersText').value;
+  if (!pc) return true;
+  const r = rules.checkPers(p, text);
+  $('#qPersCount').textContent = r.words ? `${r.words} / ${pc.words} words` : `(optional, up to ${pc.words} word${pc.words === 1 ? '' : 's'})`;
+  $('#qPersErr').textContent = r.msg || ''; $('#qPersErr').hidden = r.ok;
+  $('#qPersText').classList.toggle('field-error', !r.ok); $('#qPersText').setAttribute('aria-invalid', !r.ok);
+  $('#qPersPreview').textContent = text;
+  if (p.status !== 'sold') $('#qAdd').disabled = !r.ok;
+  return r.ok;
+}
+$('#qPersText').oninput = persInput;
 $('#qNote').oninput = e => { $('#qNoteCount').textContent = `${e.target.value.length} / 150`; };
 $('#qAdd').onclick = () => {
   const p = byId(qid);
-  const opts = p.pers ? { name: $('#qEngrave').value.trim(), packaging: $('#qPack').value, note: $('#qNote').value.trim() } : {};
-  addToBag(qid, qq, opts); dlg.close();
+  if (p.builder) { dlg.close(); goBuild(); return; }
+  const opts = p.pers ? { text: $('#qPersText').value.trim().replace(/\s+/g, ' '), packaging: $('#qPack').value, note: $('#qNote').value.trim() } : {};
+  if (addToBag(qid, qq, opts)) dlg.close();
 };
 dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
 dlg.addEventListener('keydown', e => { if (e.target.matches('input,textarea,select')) return; if (e.key === 'ArrowRight') stepQuick(1); if (e.key === 'ArrowLeft') stepQuick(-1); });
 
 /* ---------- enquiry list (cart): same product + same personalisation = one line ---------- */
-let bag = [];
-try { bag = JSON.parse(localStorage.getItem('pc-bag-v2') || '[]').filter(i => byId(i.id)); } catch (e) { bag = []; }
-const saveBag = () => { try { localStorage.setItem('pc-bag-v2', JSON.stringify(bag)); } catch (e) {} };
+let bag = [], dropped = [];
+const lineKey = (id, opts) => id + '|' + JSON.stringify(opts);
+try {
+  /* v2 lists stored the personalisation as opts.name; it is now opts.text. */
+  const raw = JSON.parse(localStorage.getItem('pc-bag-v3') || 'null') ?? JSON.parse(localStorage.getItem('pc-bag-v2') || '[]').map(i => {
+    const o = Object.assign({}, i.opts); if ('name' in o) { o.text = o.name; delete o.name; }
+    return { id: i.id, qty: i.qty, opts: o, key: lineKey(i.id, o) };
+  });
+  /* Stock and limits may have changed since the last visit: re-check every line (REQ-P4, REQ-H4). */
+  raw.forEach(l => { const r = rules.checkLine(l, bag); if (r.ok) bag.push(l); else dropped.push(r.msg); });
+} catch (e) { bag = []; }
+const saveBag = () => { try { localStorage.setItem('pc-bag-v3', JSON.stringify(bag)); } catch (e) {} };
+/* Every add goes through the rules, whichever screen it comes from. Returns false if refused. */
 function addToBag(id, qty = 1, opts = {}) {
-  const key = id + '|' + JSON.stringify(opts);
+  const key = lineKey(id, opts);
   const line = bag.find(i => i.key === key);
-  if (line) line.qty = Math.min(500, line.qty + qty); else bag.push({ key, id, qty, opts });
+  const next = { key, id, qty: Math.min(500, (line ? line.qty : 0) + qty), opts };
+  const r = rules.checkLine(next, bag);
+  if (!r.ok) { toast(r.msg); return false; }
+  if (line) line.qty = next.qty; else bag.push(next);
   saveBag(); renderBag(); trackInterest(id, 'add_to_enquiry');
   toast(`${qty} added to your enquiry list`);
+  return true;
 }
+const unitPrice = i => { const p = byId(i.id); return p.builder ? rules.hamperPrice(i.opts.items) : p.price; };
+const unitText = i => byId(i.id).builder ? aud(unitPrice(i)) : priceText(byId(i.id));
+const persText = i => { const pc = rules.persOf(byId(i.id)); return pc ? pc.label : 'Personalisation'; };
+const itemsText = i => (i.opts.items || []).map(it => `${it.qty} x ${byId(it.id).name}`).join(', ');
 const totals = () => {
-  const priced = bag.filter(i => byId(i.id).price != null);
-  const sub = priced.reduce((s, i) => s + byId(i.id).price * i.qty, 0);
+  const priced = bag.filter(i => unitPrice(i) != null);
+  const sub = priced.reduce((s, i) => s + unitPrice(i) * i.qty, 0);
   const ship = sub === 0 || sub >= SHIPPING.freeOver ? 0 : SHIPPING.flat;
   return { sub, ship, total: sub + ship, unpriced: bag.length - priced.length, count: bag.reduce((s, i) => s + i.qty, 0) };
 };
@@ -192,8 +227,8 @@ function renderBag() {
   $('#bagFoot').hidden = !bag.length;
   $('#bagList').innerHTML = bag.length ? bag.map(i => {
     const p = byId(i.id), o = i.opts || {};
-    return `<li><div class="thumb">${imgOf(p)}</div><div class="li-main"><b>${esc(p.name)}</b><small>${priceText(p)}${p.price != null ? ' each' : ''}</small>
-      ${o.name ? `<small>Name: <i>${esc(o.name)}</i></small>` : ''}${o.packaging ? `<small>Packaging: ${esc(o.packaging)}</small>` : ''}${o.note ? `<small>Card: “${esc(o.note)}”</small>` : ''}
+    return `<li><div class="thumb">${imgOf(p)}</div><div class="li-main"><b>${esc(p.name)}</b><small>${unitText(i)}${unitPrice(i) != null ? ' each' : ''}</small>
+      ${o.items ? `<small>Contains: ${esc(itemsText(i))}</small>` : ''}${o.text ? `<small>${esc(persText(i))}: <i>${esc(o.text)}</i></small>` : ''}${o.packaging ? `<small>Packaging: ${esc(o.packaging)}</small>` : ''}${o.note ? `<small>Card: “${esc(o.note)}”</small>` : ''}
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px"><span class="qty"><button data-dec="${esc(i.key)}" aria-label="One fewer">−</button><span>${i.qty}</span><button data-inc="${esc(i.key)}" aria-label="One more">+</button></span><button class="remove" data-remove="${esc(i.key)}">Remove</button></div></div></li>`;
   }).join('') : '<li>Your list is empty. Add a few pieces to get started.</li>';
   $('#bagSub').textContent = aud(t.sub) + (t.unpriced ? ' + quote' : '');
@@ -202,12 +237,51 @@ function renderBag() {
   const left = Math.max(0, SHIPPING.freeOver - t.sub);
   $('#shipMsg').textContent = left > 0 ? `${aud(left)} away from free Australia-wide shipping (estimate).` : 'Free Australia-wide shipping unlocked (estimate).';
   $('#shipBar').style.width = Math.min(100, t.sub / SHIPPING.freeOver * 100) + '%';
+  renderBuilder(); /* stock held by hampers in the list changes what the builder can offer */
 }
 const bagMsg = () => {
   if (!bag.length) return '';
   const t = totals();
-  const lines = bag.map(i => { const p = byId(i.id), o = i.opts || {}; return `- ${i.qty} x ${p.name} (${priceText(p)}${p.price != null ? ' each' : ''})` + (o.name ? `\n   Name: ${o.name}` : '') + (o.packaging ? `\n   Packaging: ${o.packaging}` : '') + (o.note ? `\n   Card: "${o.note}"` : ''); });
+  const lines = bag.map(i => { const p = byId(i.id), o = i.opts || {}; return `- ${i.qty} x ${p.name} (${unitText(i)}${unitPrice(i) != null ? ' each' : ''})` + (o.items ? `\n   Contains: ${itemsText(i)}` : '') + (o.text ? `\n   ${persText(i)}: ${o.text}` : '') + (o.packaging ? `\n   Packaging: ${o.packaging}` : '') + (o.note ? `\n   Card: "${o.note}"` : ''); });
   return `Hi Neha! I'd like to order:\n${lines.join('\n')}\nEstimated total: ${aud(t.total)}${t.unpriced ? ' plus items to quote' : ''}\nPlease confirm availability, delivery and the final price. Thank you!`;
+};
+
+/* ---------- build-your-own hamper: only pieces in stock (REQ-H1..H5) ---------- */
+/* BACKEND HOOK: read stock from the products table; submit through the submit_enquiry
+   function, which re-checks and holds the stock in one transaction (supabase/schema.sql). */
+const BUILDER_ID = (PRODUCTS.find(p => p.builder) || {}).id;
+let hb = {}; /* product id -> quantity in the hamper being built */
+const hbItems = () => Object.entries(hb).map(([id, qty]) => ({ id, qty }));
+function renderBuilder() {
+  /* Trim anything that went out of stock while building. */
+  Object.keys(hb).forEach(id => { const left = rules.available(id, bag); if (hb[id] > left) hb[id] = left; if (!hb[id]) delete hb[id]; });
+  const pieces = hbItems().reduce((s, it) => s + it.qty, 0);
+  const full = pieces >= HAMPER_BUILDER.maxItems;
+  const eligible = PRODUCTS.filter(p => p.hamper && !p.builder);
+  eligible.sort((a, b) => (rules.available(b.id, bag) > 0) - (rules.available(a.id, bag) > 0));
+  $('#hbItems').innerHTML = eligible.map(p => {
+    const left = rules.available(p.id, bag), n = hb[p.id] || 0, ok = left > 0;
+    return `<li class="${ok ? '' : 'out'}"><div class="thumb">${imgOf(p)}</div><div class="info"><b>${esc(p.name)}</b><small>${priceText(p)}</small><small>${ok ? `${left} in stock` : 'Out of stock'}</small></div>
+      <span class="qty"><button data-hb-dec="${p.id}" aria-label="One fewer ${esc(p.name)}"${n ? '' : ' disabled'}>−</button><span>${n}</span><button data-hb-inc="${p.id}" aria-label="One more ${esc(p.name)}"${ok && n < left && !full ? '' : ' disabled'}>+</button></span></li>`;
+  }).join('');
+  $('#hbChosen').innerHTML = pieces ? hbItems().map(it => `<li>${it.qty} x ${esc(byId(it.id).name)}</li>`).join('') : `<li>Add at least ${HAMPER_BUILDER.minItems} pieces.</li>`;
+  $('#hbPieces').textContent = `${pieces} of ${HAMPER_BUILDER.maxItems}`;
+  $('#hbBase').textContent = aud(HAMPER_BUILDER.base);
+  $('#hbTotal').textContent = aud(rules.hamperPrice(hbItems()));
+  const nw = rules.wordCount($('#hbNote').value);
+  $('#hbNoteCount').textContent = `${nw} / ${HAMPER_BUILDER.noteWords} words`;
+  const r = rules.checkHamper(hbItems(), 1, bag, null, $('#hbNote').value);
+  const shown = pieces ? r.errors : r.errors.filter(m => !m.startsWith('Choose at least'));
+  $('#hbErr').textContent = shown.join(' '); $('#hbErr').hidden = !shown.length;
+  $('#hbNote').classList.toggle('field-error', nw > HAMPER_BUILDER.noteWords);
+  $('#hbAdd').disabled = !r.ok;
+}
+const goBuild = () => { closeMenu(); setHash('build'); $('#build').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' }); };
+$('#hbNote').oninput = renderBuilder;
+$('#hbAdd').onclick = () => {
+  if (!BUILDER_ID) return;
+  const items = hbItems().sort((a, b) => a.id.localeCompare(b.id));
+  if (addToBag(BUILDER_ID, 1, { items, packaging: $('#hbPack').value, note: $('#hbNote').value.trim() })) { hb = {}; $('#hbNote').value = ''; renderBuilder(); }
 };
 
 /* ---------- custom order: 3 steps with validation ---------- */
@@ -279,8 +353,10 @@ document.addEventListener('click', e => {
   else if (d.f) { filter = d.f; ht = null; occ = null; render(); }
   else if (d.hf !== undefined) { ht = d.hf || null; render(); }
   else if (d.occ) { const was = occ === d.occ; occ = was ? null : d.occ; filter = 'all'; ht = null; render(); if (!was) setHash('gifts-' + d.occ); if (!t.closest('#subfilter')) goShop(); }
+  else if ('build' in d) { e.preventDefault(); goBuild(); }
+  else if (d.hbInc || d.hbDec) { const id = d.hbInc || d.hbDec; hb[id] = Math.max(0, (hb[id] || 0) + (d.hbInc ? 1 : -1)); if (!hb[id]) delete hb[id]; renderBuilder(); }
   else if (d.add) { addToBag(d.add, 1, byId(d.add).pers ? { packaging: fest ? fest.packaging : PACKAGING_DEFAULT } : {}); }
-  else if (d.inc) { const l = bag.find(i => i.key === d.inc); if (l) { l.qty = Math.min(500, l.qty + 1); saveBag(); renderBag(); } }
+  else if (d.inc) { const l = bag.find(i => i.key === d.inc); if (l) { const q = Math.min(500, l.qty + 1), r = rules.checkLine({ ...l, qty: q }, bag); if (!r.ok) toast(r.msg); else { l.qty = q; saveBag(); renderBag(); } } }
   else if (d.dec) { const l = bag.find(i => i.key === d.dec); if (l) { l.qty--; if (l.qty <= 0) bag = bag.filter(i => i !== l); saveBag(); renderBag(); } }
   else if (d.remove) { bag = bag.filter(i => i.key !== d.remove); saveBag(); renderBag(); }
   else if (t.id === 'openBag') { e.preventDefault(); closeMenu(); $('#drawer').classList.add('open'); $('#closeBag').focus(); }
@@ -294,8 +370,10 @@ window.addEventListener('hashchange', () => { if (fromHash()) $('#shop').scrollI
 
 /* ---------- start ---------- */
 applyFestival('auto');
+$('#hbPack').innerHTML = packOptions(fest ? fest.packaging : PACKAGING_DEFAULT);
 showStep(1);
 render();
 renderBag();
 if (fromHash()) setTimeout(() => $('#shop').scrollIntoView(), 50);
+if (dropped.length) { saveBag(); setTimeout(() => toast(`Removed from your list. ${dropped[0]}`), 300); }
 }

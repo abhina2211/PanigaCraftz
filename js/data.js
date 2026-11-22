@@ -10,9 +10,16 @@
    name, d   name and description
    price     number in AUD, or null for "price on enquiry"
    size      size text, or ''
-   status    'in' (in stock), 'made' (made to order), 'sold' (sold out), or null if unknown
+   status    'in' (in stock), 'made' (made to order), 'sold' (sold out), or null if unknown.
+             When stock is a number and status is not set, status follows stock.
+   stock     units on hand, or null when not counted (REQ-H2). Placeholder counts until Neha confirms.
+   hamper    true if the piece can go in a build-your-own hamper (REQ-H1). Needs a stock count.
    img/img2  photo paths; without a photo a drawn placeholder is used (col = [background, accent])
-   pers      true if it can be personalised (name, packaging, gift note)
+   pers      false, or the personalisation settings (REQ-P1, REQ-P2):
+               true                       default: PERS_DEFAULT (label and word limit)
+               { label, words }           own label and maximum number of words
+             Packaging and a gift note are offered with any personalisable piece.
+   builder   true for the build-your-own hamper product (priced by its pieces)
    occ       occasions it suits (see OCCASIONS)
    fest      festivals it is featured for (keys of FESTIVALS)
    added     ordering for "Recent products": higher = newer
@@ -85,7 +92,17 @@ const FESTIVALS = {
 };
 const PACKAGING_DEFAULT = 'Classic kraft with ribbon';
 
-const P = (o) => Object.assign({ price: null, size: '', status: null, pers: false, occ: [], fest: [], added: 0, sample: true }, o);
+/* Personalisation used when a product just says pers: true (REQ-P2). */
+const PERS_DEFAULT = { label: 'Name to add', words: 5 };
+
+/* Build-your-own hamper (REQ-H1..H5). Fee and limits are placeholders to confirm with Neha. */
+const HAMPER_BUILDER = { base: 15, minItems: 2, maxItems: 8, noteWords: 30 };
+
+const P = (o) => {
+  const p = Object.assign({ price: null, size: '', status: null, stock: null, hamper: false, pers: false, occ: [], fest: [], added: 0, sample: true }, o);
+  if (typeof p.stock === 'number' && !p.status) p.status = p.stock > 0 ? 'in' : 'sold';
+  return p;
+};
 const PL = id => `images/planters/${id}.jpg`;
 
 const PRODUCTS = [
@@ -98,34 +115,35 @@ const PRODUCTS = [
  P({ id:'p5', cat:'planters', name:'Tropical Leaf Tripod Planter', d:'Statement tropical-leaf planter on a tripod stand. Perfect for a monstera or fiddle leaf.', price:89, size:'44 cm tall with stand', img:PL('CKDDLd8hLCg'), ig:'CKDDLd8hLCg', occ:['housewarming'], added:10 }),
  P({ id:'p6', cat:'planters', name:'Blue Willow Footed Trough', d:'Classic blue-and-white willow pattern on a footed trough. Lovely for succulents or lucky bamboo.', price:65, size:'12 × 25 × 9.4 cm', img:PL('CYlPJjtlT9n'), ig:'CYlPJjtlT9n', occ:['housewarming','corporate'], fest:['lunar'], added:18 }),
  P({ id:'p7', cat:'planters', name:'Watercolour Rose Planter', d:'Soft watercolour roses on a hand-finished pot.', price:45, pers:true, img:PL('CX__oHHB4Pj'), ig:'CX__oHHB4Pj', occ:['mothersday','birthday','teacher'], fest:['eid','mothersday'], added:16 }),
- P({ id:'p8', cat:'planters', name:'Vintage Bouquet Mini Planter', d:'A petite vintage bouquet planter, the perfect stocking filler or Kris Kringle gift.', price:35, size:'11 × 10 cm', pers:true, img:PL('CVEi430hYq_'), ig:'CVEi430hYq_', badge:'Under $40', occ:['christmas','teacher'], fest:['christmas'], added:14 }),
+ P({ id:'p8', cat:'planters', name:'Vintage Bouquet Mini Planter', d:'A petite vintage bouquet planter, the perfect stocking filler or Kris Kringle gift.', price:35, size:'11 × 10 cm', stock:3, hamper:true, pers:true, img:PL('CVEi430hYq_'), ig:'CVEi430hYq_', badge:'Under $40', occ:['christmas','teacher'], fest:['christmas'], added:14 }),
  P({ id:'p9', cat:'planters', name:'Leafy Raised Planter', d:'Blue leaf decoupage on a raised timber base.', img:PL('Ca8K_iDB095'), ig:'Ca8K_iDB095', occ:['housewarming'], added:20 }),
  P({ id:'p10',cat:'planters', name:'Line-Art Faces Stand Planter', d:'Modern line-art faces on a planter with a wooden stand.', img:PL('CaYI2OVBAaf'), ig:'CaYI2OVBAaf', occ:['housewarming','birthday'], added:21 }),
  P({ id:'p11',cat:'planters', name:'Bluebell Timber-Base Planter', d:'Bluebell florals on a planter with a timber base.', size:'21 × 21 cm', status:'made', img:PL('CZ1IhnVlWmM'), ig:'CZ1IhnVlWmM', occ:['housewarming','mothersday'], added:19 }),
  P({ id:'p12',cat:'planters', name:'Aztec Stripe Planter', d:'Bold Aztec stripes on an acacia stand.', size:'21 × 21 cm', img:PL('CQanJlSBMwB'), ig:'CQanJlSBMwB', occ:['housewarming','corporate'], added:13 }),
 
  // Other lines: names from recent Instagram posts; prices and drawn pictures are placeholders.
- P({ id:'c1', cat:'candles', name:'Botanical decoupage candle', d:'Leaf and blossom design on a frosted candle jar, boxed with a satin ribbon.', price:22, img:'images/products/candle-1.jpg', img2:'images/products/candle-2.jpg', badge:'Teacher favourite', pers:true, occ:['teacher','christmas','birthday'], fest:['christmas'], added:60 }),
- P({ id:'c2', cat:'candles', name:'Personalised name candle', d:'A name added to the decoupage design. Popular as thank-you gifts for families and guests.', price:28, pers:true, occ:['teacher','housewarming','baby'], fest:['christmas'], added:44, col:['#f8e4e4','#c0403a'] }),
- P({ id:'c3', cat:'candles', name:'Blue rose candle', d:'Made to match the blue rose vase and diffuser set.', price:26, occ:['mothersday','housewarming'], added:51, col:['#e3eaf5','#3d5f9a'] }),
- P({ id:'t1', cat:'tealights', name:'Personalised tea light holder', d:'Decoupaged glass with a name on the front.', price:18, badge:'Personalised', pers:true, occ:['teacher','birthday'], added:58, col:['#fbefee','#c0403a'] }),
- P({ id:'t2', cat:'tealights', name:'Wooden tea light holder', d:'A unique wooden design, decoupaged by hand.', price:24, occ:['housewarming','christmas'], added:43, col:['#f3e6dc','#6e1f24'] }),
- P({ id:'t3', cat:'tealights', name:'Festive glass tea light set', d:'A pair of decorated holders for Diwali evenings.', price:30, badge:'Festive', occ:['diwali'], fest:['diwali','eid'], added:20, col:['#fbe9d6','#c0403a'] }),
+ P({ id:'c1', cat:'candles', name:'Botanical decoupage candle', d:'Leaf and blossom design on a frosted candle jar, boxed with a satin ribbon.', price:22, img:'images/products/candle-1.jpg', img2:'images/products/candle-2.jpg', badge:'Teacher favourite', stock:8, hamper:true, pers:{ label:'Words beside the motif', words:15 }, occ:['teacher','christmas','birthday'], fest:['christmas'], added:60 }),
+ P({ id:'c2', cat:'candles', name:'Personalised name candle', d:'A name added to the decoupage design. Popular as thank-you gifts for families and guests.', price:28, stock:5, hamper:true, pers:{ label:'Name or short message', words:10 }, occ:['teacher','housewarming','baby'], fest:['christmas'], added:44, col:['#f8e4e4','#c0403a'] }),
+ P({ id:'c3', cat:'candles', name:'Blue rose candle', d:'Made to match the blue rose vase and diffuser set.', price:26, stock:0, hamper:true, occ:['mothersday','housewarming'], added:51, col:['#e3eaf5','#3d5f9a'] }),
+ P({ id:'t1', cat:'tealights', name:'Personalised tea light holder', d:'Decoupaged glass with a name on the front.', price:18, badge:'Personalised', stock:6, hamper:true, pers:{ label:'Name to add', words:3 }, occ:['teacher','birthday'], added:58, col:['#fbefee','#c0403a'] }),
+ P({ id:'t2', cat:'tealights', name:'Wooden tea light holder', d:'A unique wooden design, decoupaged by hand.', price:24, stock:3, hamper:true, occ:['housewarming','christmas'], added:43, col:['#f3e6dc','#6e1f24'] }),
+ P({ id:'t3', cat:'tealights', name:'Festive glass tea light set', d:'A pair of decorated holders for Diwali evenings.', price:30, badge:'Festive', stock:4, hamper:true, occ:['diwali'], fest:['diwali','eid'], added:20, col:['#fbe9d6','#c0403a'] }),
  P({ id:'v1', cat:'vases', name:'Rose crackle vase', d:'Glass vase with rose decoupage and a crackle effect, her most detailed technique.', price:45, badge:'Signature', occ:['mothersday','housewarming','birthday'], fest:['eid'], added:50, col:['#f8e4e4','#c0403a'] }),
  P({ id:'v2', cat:'vases', name:'Blue rose vase set', d:'Vase, candle and diffuser in matching blue roses.', price:85, occ:['mothersday','housewarming'], fest:['mothersday'], added:52, col:['#e3eaf5','#3d5f9a'] }),
- P({ id:'v3', cat:'vases', name:'Decoupaged bottle vase', d:'An upcycled glass bottle turned into a statement vase.', price:30, occ:['housewarming','birthday'], added:49, col:['#fbefee','#6e1f24'] }),
- P({ id:'j1', cat:'jars', name:'Decoupaged cookie jar', d:'A glass cookie jar for the kitchen bench, ready to fill with homemade cookies.', price:32, occ:['housewarming','christmas'], added:55, col:['#fbefee','#6e1f24'] }),
- P({ id:'j2', cat:'jars', name:'Festive chocolate box', d:'A decorated box to fill with Christmas chocolates.', price:20, badge:'Christmas', occ:['christmas','teacher'], fest:['christmas'], added:30, col:['#f8e4e4','#c0403a'] }),
- P({ id:'j3', cat:'jars', name:'Storage jar', d:'Clip-top jar for tea, spices or treats.', price:25, occ:['housewarming','diwali'], fest:['diwali'], added:22, col:['#f3e6dc','#c0403a'] }),
+ P({ id:'v3', cat:'vases', name:'Decoupaged bottle vase', d:'An upcycled glass bottle turned into a statement vase.', price:30, pers:{ label:'Message on the bottle', words:50 }, occ:['housewarming','birthday'], added:49, col:['#fbefee','#6e1f24'] }),
+ P({ id:'j1', cat:'jars', name:'Decoupaged cookie jar', d:'A glass cookie jar for the kitchen bench, ready to fill with homemade cookies.', price:32, stock:2, hamper:true, occ:['housewarming','christmas'], added:55, col:['#fbefee','#6e1f24'] }),
+ P({ id:'j2', cat:'jars', name:'Festive chocolate box', d:'A decorated box to fill with Christmas chocolates.', price:20, badge:'Christmas', stock:10, hamper:true, occ:['christmas','teacher'], fest:['christmas'], added:30, col:['#f8e4e4','#c0403a'] }),
+ P({ id:'j3', cat:'jars', name:'Storage jar', d:'Clip-top jar for tea, spices or treats.', price:25, stock:0, hamper:true, occ:['housewarming','diwali'], fest:['diwali'], added:22, col:['#f3e6dc','#c0403a'] }),
  P({ id:'d1', cat:'decor', name:'Decoupaged bathroom set', d:'Matching bathroom pieces. One customer came back after six years for the same set for a friend.', price:75, occ:['housewarming'], added:56, col:['#e3eaf5','#6e1f24'] }),
- P({ id:'d2', cat:'decor', name:'Travel-theme coasters', d:'A set of coasters for people who love to travel.', price:28, occ:['birthday','christmas','corporate'], added:47, col:['#fbefee','#3d5f9a'] }),
- P({ id:'d3', cat:'decor', name:'Cutlery or pen stand', d:'Amsterdam-inspired stand for cutlery, pens or makeup brushes.', price:30, occ:['housewarming','teacher','corporate'], added:42, col:['#f3e6dc','#c0403a'] }),
+ P({ id:'d2', cat:'decor', name:'Travel-theme coasters', d:'A set of coasters for people who love to travel.', price:28, stock:4, hamper:true, occ:['birthday','christmas','corporate'], added:47, col:['#fbefee','#3d5f9a'] }),
+ P({ id:'d3', cat:'decor', name:'Cutlery or pen stand', d:'Amsterdam-inspired stand for cutlery, pens or makeup brushes.', price:30, stock:3, hamper:true, occ:['housewarming','teacher','corporate'], added:42, col:['#f3e6dc','#c0403a'] }),
  P({ id:'h1', cat:'hampers', ht:'personal', name:'Teacher pamper hamper', d:'A personalised pamper hamper with a handmade decoupage piece and treats.', price:65, badge:'Year-end', pers:true, occ:['teacher','christmas'], fest:['christmas'], added:36, col:['#f8e4e4','#c0403a'] }),
  P({ id:'h2', cat:'hampers', ht:'personal', name:'Tea lover hamper', d:'A decorated cup with tea. "A little cup of friendship."', price:45, pers:true, occ:['birthday','mothersday'], fest:['eid','mothersday'], added:48, col:['#eef2e6','#6e1f24'] }),
  P({ id:'h3', cat:'hampers', ht:'personal', name:'New baby hamper', d:'To celebrate the arrival of a little one, for baby showers and naming ceremonies.', price:85, pers:true, occ:['baby'], added:46, col:['#e3eaf5','#c0403a'] }),
  P({ id:'h4', cat:'hampers', ht:'festive', name:'Diwali hamper', d:'Decorated tea lights, a treat box and festive touches for Diwali.', price:70, badge:'Festive', pers:true, occ:['diwali'], fest:['diwali'], added:21, col:['#fbe9d6','#c0403a'] }),
  P({ id:'h5', cat:'hampers', ht:'festive', name:'Christmas & Kris Kringle hamper', d:'A chocolate box, botanical candle and mini planter, made for Christmas surprises.', price:60, badge:'Christmas', pers:true, occ:['christmas','teacher'], fest:['christmas'], added:34, col:['#f8e4e4','#6e1f24'] }),
  P({ id:'h6', cat:'hampers', ht:'corporate', name:'Build-your-own corporate hamper', d:'Your logo on the card, festival-themed packaging, 10 to 500 boxes. Quoted per order.', price:85, priceFrom:true, badge:'Bulk pricing', pers:true, occ:['corporate','christmas'], fest:['christmas','lunar','diwali'], added:10, col:['#fbefee','#6e1f24'] }),
+ P({ id:'h8', cat:'hampers', ht:'personal', builder:true, name:'Build-your-own hamper', d:'Pick the pieces yourself from what is in stock today. We add the basket, wrapping and a card.', price:15, priceFrom:true, badge:'Build your own', occ:['birthday','teacher','christmas','mothersday'], added:35, col:['#fbefee','#c0403a'] }),
  P({ id:'h7', cat:'hampers', ht:'corporate', name:'Staff desk gift set', d:'Pen stand, personalised name candle and a card. Quoted per order.', price:55, priceFrom:true, pers:true, occ:['corporate'], added:9, col:['#f3e6dc','#c0403a'] })
 ];
 
@@ -138,5 +156,5 @@ const IG_STRIP = [
 /* Shipping estimate shown in the enquiry list (placeholder from the prototype; final rates via Australia Post later). */
 const SHIPPING = { flat: 12.95, freeOver: 120 };
 
-return { IG, CATEGORIES, HAMPER_TYPES, OCCASIONS, FESTIVALS, PACKAGING_DEFAULT, PRODUCTS, IG_STRIP, SHIPPING };
+return { IG, CATEGORIES, HAMPER_TYPES, OCCASIONS, FESTIVALS, PACKAGING_DEFAULT, PERS_DEFAULT, HAMPER_BUILDER, PRODUCTS, IG_STRIP, SHIPPING };
 })();

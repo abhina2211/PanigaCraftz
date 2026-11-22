@@ -9,6 +9,8 @@ This folder is the single working version. It merges:
 
 The old folder was only read; nothing in it was changed.
 
+Requirements and the delivery plan live in [`docs/requirements.md`](docs/requirements.md), which is versioned: update it with every change to what the site must do.
+
 ## Run it
 
 No build step. Open `index.html` in a browser, or serve the folder:
@@ -24,6 +26,9 @@ npx serve .
 | `index.html` | Page structure |
 | `css/styles.css` | All styles (theme colours at the top, taken from the logo) |
 | `js/data.js` | **Edit this to change products, prices, categories, occasions and festival dates** |
+| `js/rules.js` | Business rules shared by every screen: personalisation word limits, hamper stock checks |
+| `docs/requirements.md` | Versioned requirements, delivery plan and change log |
+| `supabase/schema.sql` | Draft database schema that enforces the same rules (not applied yet) |
 | `js/app.js` | Storefront behaviour: carousel, filters, quick view, enquiry list, custom order form, festival engine |
 | `images/logo.png` | Logo, cropped from the Instagram profile picture (150 px source; replace with the original file when available) |
 | `images/planters/` | 18 planter photos from Instagram (owner's permission noted in the handover pack) |
@@ -34,7 +39,8 @@ npx serve .
 - **Festival engine.** The announcement bar, its order-by countdown and the first hero slide follow the next festival in `FESTIVALS` (Christmas, Lunar New Year, Eid, Mother's Day, Diwali). Add `#preview` to the URL to show an admin pill that previews each festival.
 - **Shareable links** for Instagram posts and the bio: `#planters`, `#candles`, `#hampers`, `#hampers-festive`, `#hampers-personal`, `#hampers-corporate`, `#gifts-teacher`, `#gifts-christmas`, `#gifts-housewarming` and so on.
 - **Shop filters** by category, hamper type, occasion and price band, with sorting.
-- **Quick view** with personalisation for items marked `pers: true`, and previous and next arrows.
+- **Quick view** with personalisation for items marked `pers`, each with its own label and word limit (for example 50 words on the bottle vase), and previous and next arrows.
+- **Build your own hamper** (`#build`): pick 2 to 8 pieces from what is in stock. Stock counts are in `js/data.js` (`stock`, `hamper`).
 - **Enquiry list**: same product with the same personalisation becomes one line. Shows a shipping estimate and copies a ready-to-send Instagram DM. Saved in the visitor's browser.
 - **Custom order form** in 3 steps, with a reference number and a message to copy.
 - **Stock status** (`in`, `made`, `sold`) shows only where it is known.
