@@ -185,7 +185,7 @@ const screens = {
         <div class="adm-chips" data-for="products">${chips}</div></div>
       ${selecting ? `<p class="adm-help" style="margin:4px 4px 10px">Tap products to select them. <button class="adm-btn ghost" data-action="select-all" style="min-height:36px;padding:0 6px;color:var(--red-ink)">Select all ${list.length}</button></p>` : ''}
       ${list.length ? `<ul class="adm-list${selecting ? ' adm-selecting' : ''}">${list.map(quickCard).join('')}</ul>` : '<div class="adm-empty">No products match.</div>'}
-      ${selecting ? '' : '<a class="adm-btn primary big" href="#/products/new" style="margin-top:14px">Add a product</a>'}` };
+      ${selecting ? '' : '<a class="adm-fab" href="#/products/new" aria-label="Add a product"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg><span>Add product</span></a>'}` };
   },
 
   product(id) {
@@ -387,6 +387,7 @@ function route(keepScroll = false) {
   $$('#bulkBar button').forEach(b => { b.disabled = !selected.size; });
   $('#back').hidden = !view.back;
   $('#screen').innerHTML = view.html;
+  $('#app').classList.toggle('fab-on', !!$('#screen .adm-fab'));
   document.querySelectorAll('.adm-tabs a').forEach(a => { if (a.dataset.tab === section) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   lastHash = location.hash;
   setDirty(false);
