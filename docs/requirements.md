@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Document version | 1.10 |
+| Document version | 1.11 |
 | Status | Draft, to review with Neha |
 | Owner | Abhi (for Neha Koolwal, PanigaCraftz) |
 | Last updated | 27 Nov 2026 |
@@ -62,6 +62,7 @@ The gift note on the card stays a separate field limited to 150 characters.
 | REQ-S5 | Work happens on `feature/...` branches taken from `development`; `development` is merged into `main` to go live. | Agreed (v1.1) |
 | REQ-S6 | A feature branch is merged into `development` only when it meets the definition of done in `CONTRIBUTING.md`: builds, tests pass, checked by hand (on a phone for admin changes), Supabase SQL applied and documented, this document updated, no secrets, pushed and reviewed in a pull request. | Agreed (v1.8) |
 | REQ-S7 | Only one feature branch is open at a time: the next one starts from `development` after the previous one is merged. | Agreed (v1.8) |
+| REQ-S8 | The site is hosted on a free public URL that works on a phone, deployed automatically from `main` on GitHub. Product pages are rendered on demand from Supabase on each visit, so new products, stock and prices show without a rebuild; the home and admin pages stay prebuilt. Supabase keys are set on the host, never committed. | Built (v1.11) on Cloudflare Workers free tier, `*.workers.dev` address until a domain is chosen |
 
 ### Database (Supabase)
 
@@ -74,7 +75,7 @@ The gift note on the card stays a separate field limited to 150 characters.
 | REQ-D5 | Neha has an admin screen at `/admin/`, behind an email and password login, to edit prices, stock, status, personalisation, word limits, hamper pieces and whether a product is on the site, and to see enquiries and change their status. Only accounts listed in the `admins` table can see or change anything; the database enforces this, not the page. Cancelling an enquiry returns its hamper stock. Products are hidden, never deleted. | Built (v1.3); adding new products with photos is next |
 | REQ-D6 | Customers can send their enquiry list to Neha from the site (name, email, optional mobile, postcode), as well as copying it to Instagram. They get a reference number and the list is cleared. | Built (v1.3) |
 | REQ-D7 | Neha gets an email when a new enquiry arrives. | Next |
-| REQ-D8 | Neha can add a new product from her phone: photo (taken or chosen, shrunk before upload), name, category, description, price, ready-made pieces, blank base, personalisation, hampers and whether it shows on the website. It appears in the shop straight away. Its own product page appears after the next site build. | Built (v1.7); automatic rebuild comes with deployment |
+| REQ-D8 | Neha can add a new product from her phone: photo (taken or chosen, shrunk before upload), name, category, description, price, ready-made pieces, blank base, personalisation, hampers and whether it shows on the website. It appears in the shop straight away, and so does its own product page. | Built (v1.7); product page straight away since v1.11 (REQ-S8) |
 
 ### Admin panel design (for Neha, mostly on her phone)
 
@@ -143,6 +144,7 @@ Several designs are decoupaged onto the same blank piece. For example, the Blueb
 
 | Version | Date | Change | Asked by |
 |---|---|---|---|
+| 1.11 | 27 Nov 2026 | Hosting on Cloudflare with product pages rendered on demand (REQ-S8); a new product's page shows straight away (REQ-D8). | Abhi |
 | 1.10 | 27 Nov 2026 | Ready-made hampers use the same pieces as custom hampers and hold their stock (REQ-H8); pieces can be personalised inside hampers (REQ-H9, planned); enquiries keep the prices shown when sent (REQ-H10). Numbered 1.10 because 1.9 is on the open feature/admin-add-button branch. | Abhi |
 | 1.9 | 23 Nov 2026 | Add product button moved to the top bar of the Products list so it is reachable without scrolling (REQ-A14). | Abhi |
 | 1.8 | 23 Nov 2026 | Definition of done for feature branches (REQ-S6) and one feature branch at a time (REQ-S7). | Abhi |

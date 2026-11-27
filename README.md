@@ -4,7 +4,7 @@ Storefront for PanigaCraftz, Neha Koolwal's handmade decoupage business in Sydne
 
 Requirements and the delivery plan live in [`docs/requirements.md`](docs/requirements.md), which is versioned: update it with every change to what the site must do.
 
-The site is built with [Astro](https://astro.build). Astro turns the files in `src/` into plain HTML pages at build time, one page per product from a single template. The browser scripts add the interactive parts (filters, quick view, enquiry list, hamper builder).
+The site is built with [Astro](https://astro.build). Astro turns the home and admin pages into plain HTML at build time. Product pages come from a single template and are drawn on each visit from the current products in Supabase, so a new product's page exists as soon as Neha adds it. The browser scripts add the interactive parts (filters, quick view, enquiry list, hamper builder).
 
 ## Run it
 
@@ -15,7 +15,7 @@ npm install        # once, downloads Astro and Tailwind into node_modules/
 npm run dev        # local site at http://localhost:4321, reloads on save
 npm test           # checks the business rules (word limits, hamper stock)
 npm run build      # writes the finished site to dist/
-npm run preview    # serves dist/ to check the build
+npm run preview    # runs the built site the way Cloudflare does, to check the build
 ```
 
 ## Connect Supabase
@@ -67,7 +67,9 @@ To try the design without real data, run `npm run dev` and open http://localhost
 | `src/lib/rules.js` | Business rules shared by every page and the tests: personalisation word limits, hamper stock checks |
 | `src/lib/pictures.js` | Drawn placeholder pictures for products without photos |
 | `src/pages/index.astro` | Home page |
-| `src/pages/products/[slug].astro` | The one template that makes every product page, e.g. `/products/decoupaged-bottle-vase/` |
+| `src/pages/products/[slug].astro` | The one template that draws every product page on each visit, e.g. `/products/decoupaged-bottle-vase/` |
+| `src/pages/404.astro` | Page shown for an address that doesn't exist, such as a removed product |
+| `astro.config.mjs` | Astro settings: the Cloudflare adapter and the public address (`SITE_URL`) |
 | `src/layouts/Base.astro` | Page shell: head tags, header, footer |
 | `src/components/` | Header (menus built from the catalogue) and footer with the enquiry list drawer |
 | `src/scripts/core.js` | Browser code for every page: festival bar, menus, enquiry list |
@@ -105,7 +107,24 @@ To try the design without real data, run `npm run dev` and open http://localhost
 - Corporate hampers are suggestions, not yet in her posts.
 - Shipping estimate ($12.95 flat, free over $120).
 - Festival dates for 2027 need confirming each year.
-- The domain in `astro.config.mjs` (`site`) is a placeholder.
+- The domain: until one is chosen the site lives at its `workers.dev` address, set as `SITE_URL` on Cloudflare.
+
+## Going live (Cloudflare)
+
+The site runs on Cloudflare Workers (free plan, commercial use allowed). Cloudflare watches the `main` branch on GitHub: every push to `main` builds and publishes the site, usually within two minutes.
+
+Set up once, in the Cloudflare dashboard:
+
+1. **Workers & Pages > Create > Import a repository**, connect GitHub and pick `abhina2211/PanigaCraftz`.
+2. Project name `panigacraftz`, production branch `main`, build command `npm run build`, deploy command `npx wrangler deploy`.
+3. Under **Build > Variables and secrets** (the build ones, because Astro writes these into the pages while building), add:
+   - `PUBLIC_SUPABASE_URL` = `https://fjjbrmvgnlwxpkusixoc.supabase.co`
+   - `PUBLIC_SUPABASE_ANON_KEY` = the anon public key from your `.env` (never the `service_role` key)
+   - `SITE_URL` = the address Cloudflare gives the site, for example `https://panigacraftz.<your-subdomain>.workers.dev` (used for share previews; change it when the domain is chosen)
+   - `NODE_VERSION` = `22`
+4. **Deploy**. Then open the `workers.dev` address on a phone.
+
+Changing a variable takes effect at the next build: use **Deployments > Retry** (or push to `main`).
 
 ## Branches
 

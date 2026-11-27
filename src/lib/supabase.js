@@ -46,8 +46,11 @@ export function applyHamperPieces(products, rows, bases = BASES) {
 /* Replace the local catalogue with the live products, in place, so every module that
    imported PRODUCTS (rules, pages, scripts) sees the live data. Returns how it went. */
 let loading = null;
-export function loadLiveProducts() {
+/* In the browser the products load once per page. On the server (on-demand product
+   pages) pass { fresh: true } so every visit sees the current stock and prices. */
+export function loadLiveProducts({ fresh = false } = {}) {
   if (!supabase) return Promise.resolve({ source: 'local file' });
+  if (fresh) loading = null;
   return loading ??= (async () => {
     try {
       const [{ data, error }, b, hp] = await Promise.all([
