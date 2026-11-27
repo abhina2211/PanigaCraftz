@@ -8,6 +8,7 @@ Requirement ids and versions refer to `docs/requirements.md`.
 
 | Started | Branch | Component | What it changes | Req. version | Status |
 |---|---|---|---|---|---|
+| 27 Nov 2026 | `feature/footer-credit` | Footer | Small "Website by MetaFinTech Pty Ltd" credit at the bottom of the shared footer on every shop page (REQ-S11). | 1.16 | Open, waiting for review. |
 | 27 Nov 2026 | `feature/alt-design` (7b9949a) | Storefront design | Alternative "Studio journal" storefront: warm paper colours, arched photos, Fraunces/Figtree/Caveat fonts, ordering steps after the hero, new section order. Styles in a new `src/styles/shop.css`; the admin panel keeps `global.css` (REQ-S9). | 1.13 (taken; renumber to 1.15 on merge) | **Trial, not merged.** Waiting for the choice between the two designs. Before merging: copy the hamper size and section styles (`.hb-list`, `.hb-sec`, `.hb-sizes`, `.hb-size-msg`) into `shop.css`, and expect conflicts in `index.astro`, `Footer.astro` and `requirements.md`. |
 
 ## Merged into development

@@ -122,6 +122,7 @@ footer h3{color:#fff;font-size:18px;margin-bottom:8px}
 footer a{display:block;text-decoration:none;padding:4px 0}footer a:hover{color:var(--blush)}
 footer button{background:none;border:0;color:inherit;padding:4px 0;cursor:pointer;font-size:15px;display:block;text-align:left}
 footer button:hover{color:var(--blush)}
+footer .credit{display:block;margin-top:24px;padding-top:14px;border-top:1px solid rgba(241,222,222,.25);font-size:13px;text-align:center}
 /* quick view */
 dialog.qview{border:0;padding:0;border-radius:22px;width:min(960px,94vw);max-height:92vh;overflow:auto;background:var(--bg);color:var(--ink);box-shadow:0 30px 80px rgba(0,0,0,.4)}
 dialog.qview::backdrop{background:rgba(40,12,15,.6)}
