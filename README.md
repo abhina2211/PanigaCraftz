@@ -122,6 +122,14 @@ To try the design without real data, run `npm run dev` and open http://localhost
 - Festival dates for 2027 need confirming each year.
 - The domain: until one is chosen the site lives at its `workers.dev` address, set as `SITE_URL` on Cloudflare.
 
+## Launching soon page
+
+While gaps are still being filled, the live site can show a "launching soon" page instead of the shop (REQ-S10). It has the logo, a short note, a button to Instagram @panigacraftz_neha and an email link to panigacraftz@gmail.com.
+
+- **Turn it on:** in Cloudflare, under **Build > Variables and secrets**, add `PUBLIC_COMING_SOON` = `true`, then **Deployments > Retry** (or push to `main`). The home page becomes the launching-soon page and product links go to it. `/admin/` keeps working, so Neha can add products and photos before launch.
+- **Open the shop:** delete the variable (or set it to `false`) and rebuild.
+- **Try it locally:** add `PUBLIC_COMING_SOON=true` to `.env` and run `npm run dev`. The page is also always at `/coming-soon/`.
+
 ## Going live (Cloudflare)
 
 The site runs on Cloudflare Workers (free plan, commercial use allowed). Cloudflare watches the `main` branch on GitHub: every push to `main` builds and publishes the site, usually within two minutes.
@@ -135,6 +143,7 @@ Set up once, in the Cloudflare dashboard:
    - `PUBLIC_SUPABASE_ANON_KEY` = the anon public key from your `.env` (never the `service_role` key)
    - `SITE_URL` = the address Cloudflare gives the site, for example `https://panigacraftz.<your-subdomain>.workers.dev` (used for share previews; change it when the domain is chosen)
    - `NODE_VERSION` = `22`
+   - `PUBLIC_COMING_SOON` = `true` while the shop isn't ready (see "Launching soon page" above)
 4. **Deploy**. Then open the `workers.dev` address on a phone.
 
 Changing a variable takes effect at the next build: use **Deployments > Retry** (or push to `main`).

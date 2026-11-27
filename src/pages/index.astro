@@ -6,6 +6,10 @@
 import Base from '../layouts/Base.astro';
 import { SHOP_CATEGORIES, OCCASIONS, FESTIVALS, IG_STRIP } from '../data/catalogue.js';
 import { pic } from '../lib/pictures.js';
+import { COMING_SOON } from '../lib/launch.js';
+
+/* Before the shop opens, the home page is the launching-soon page (REQ-S10). */
+if (COMING_SOON) return Astro.rewrite('/coming-soon/');
 
 const igPost = (id, kind = 'p') => `https://www.instagram.com/${kind}/${id}/`;
 const catPhoto = { planters: '/images/planters/CX__oHHB4Pj.jpg', candles: '/images/products/candle-1.jpg' };
