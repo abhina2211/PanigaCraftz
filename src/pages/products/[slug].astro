@@ -4,14 +4,15 @@
    draws that product, so a product Neha adds in the admin panel has its page
    straight away, with current stock and prices, without rebuilding the site. */
 import Base from '../../layouts/Base.astro';
-import { PRODUCTS, CATEGORIES, HAMPER_TYPES, OCCASIONS, IG } from '../../data/catalogue.js';
+import { CATEGORIES, HAMPER_TYPES, OCCASIONS, IG } from '../../data/catalogue.js';
 import { persOf } from '../../lib/rules.js';
-import { imgOf } from '../../lib/pictures.js';
-import { loadLiveProducts } from '../../lib/supabase.js';
+import { imgOf, safeImg } from '../../lib/pictures.js';
+import { fetchLiveProducts } from '../../lib/supabase.js';
 
 export const prerender = false;
 
-await loadLiveProducts({ fresh: true }); /* products from Supabase when the keys are set, else the local file */
+/* This visit's own copy of the products: from Supabase when the keys are set, else the local file. */
+const { products: PRODUCTS } = await fetchLiveProducts();
 const p = PRODUCTS.find(x => x.slug === Astro.params.slug);
 if (!p) return new Response(null, { status: 404 }); /* unknown or hidden product: the 404 page */
 const pers = persOf(p);
@@ -22,14 +23,14 @@ const statusText = { in: 'In stock', made: 'Made to order', sold: 'Sold out' }[p
 const occasions = p.occ.map(id => OCCASIONS.find(o => o.id === id)).filter(Boolean);
 const related = PRODUCTS.filter(x => x.id !== p.id && x.cat === p.cat).slice(0, 4);
 ---
-<Base title={`${p.name} | PanigaCraftz`} description={p.d} image={p.img || undefined}>
+<Base title={`${p.name} | PanigaCraftz`} description={p.d} image={safeImg(p.img) || undefined}>
   <section class="band"><div class="wrap">
     <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Home</a> › <a href={groupHref}>{group?.name}</a> › <span>{p.name}</span></nav>
 
     <article class="pdp" id="product" data-id={p.id}>
       <div class="pdp-img">
         <Fragment set:html={imgOf(p, false)} />
-        {p.img2 && <img src={p.img2} alt={`${p.name}, second view`} loading="lazy" />}
+        {safeImg(p.img2) && <img src={safeImg(p.img2)} alt={`${p.name}, second view`} loading="lazy" />}
       </div>
 
       <div class="pdp-body">

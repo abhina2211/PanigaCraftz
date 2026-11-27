@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Document version | 1.11 |
+| Document version | 1.13 |
 | Status | Draft, to review with Neha |
 | Owner | Abhi (for Neha Koolwal, PanigaCraftz) |
 | Last updated | 27 Nov 2026 |
@@ -128,6 +128,20 @@ Several designs are decoupaged onto the same blank piece. For example, the Blueb
 | REQ-H9 | Some pieces can be personalised inside a hamper, for example small jars and tea light holders. A piece keeps its own personalisation setting, field label and word limit inside a ready-made or custom hamper. The hamper builder shows the field for those pieces only, and the database checks the word limit. | Planned (v1.10), first week of December |
 | REQ-H10 | Enquiries keep the prices shown when they were sent: each line stores the product name and unit price, and a custom hamper also stores its basket and wrapping fee and the price of each piece. Later price changes don't change past enquiries. The admin panel shows the saved prices. | Built (v1.10), decided 24 Nov |
 
+### Security (before going live)
+
+From the security review of 27 Nov 2026. Anyone can send an enquiry, and a hamper enquiry holds stock, so the database limits what one person can hold.
+
+| Id | Requirement | Status |
+|---|---|---|
+| REQ-X1 | One enquiry has at most 20 items. A hamper line (custom or ready-made) can be ordered at most 10 at a time, and one enquiry holds at most 40 hamper pieces. Anything bigger is refused with a message to contact Neha. | Built (v1.13) in `supabase/security.sql`; numbers are starting values, changed in **Table Editor > enquiry_limits** |
+| REQ-X2 | At most 3 enquiries an hour from one email address, and 30 an hour for the whole shop. | Built (v1.13), same table |
+| REQ-X3 | An enquiry Neha hasn't confirmed within 7 days is cancelled automatically every hour, which gives its hamper stock back (REQ-H5). Neha marks real enquiries Confirmed to keep them. | Built (v1.13), runs with Supabase's pg_cron |
+| REQ-X4 | The website and admin panel can't read or change these limits or run the expiry; only the Supabase dashboard can. | Built (v1.13) |
+| REQ-X5 | Every page is sent with security headers: a Content-Security-Policy (scripts only from the site; styles and fonts from Google Fonts; photos and data from Supabase), no framing by other sites, HTTPS only, no MIME sniffing and a strict referrer policy. | Built (v1.13): `public/_headers` for prebuilt pages, `src/middleware.js` for product pages, one list in `src/lib/security-headers.js` |
+| REQ-X6 | Product details from the database are checked before they go into a page: photo addresses must be a site path or `https://`, colours must be `#hex`, and ids are escaped. The photo folder only takes JPEG, PNG or WebP up to 5 MB. Each product page visit reads its own copy of the products, so two visits at once can't mix data. | Built (v1.13) |
+| REQ-X7 | All keys and tokens are kept encrypted in a key store and read only when needed, never in plain text in the code, the repository or the built site. Server-side secrets go in Cloudflare secrets (Secrets Store) or Supabase Vault. The Supabase `service_role` / secret key is never used by the site. The Supabase anon key is public by design (every visitor's browser needs it) and is safe only because Row Level Security limits it; it is set as a Cloudflare build secret, not committed. | Agreed (v1.13). Next: a bot check (Cloudflare Turnstile) on enquiries, whose secret goes in Cloudflare Secrets Store |
+
 ## 4. Open questions for Neha
 
 1. Confirm the word limits above, especially the motif candle (10 or 15 words).
@@ -144,6 +158,7 @@ Several designs are decoupaged onto the same blank piece. For example, the Blueb
 
 | Version | Date | Change | Asked by |
 |---|---|---|---|
+| 1.13 | 27 Nov 2026 | Security before going live: limits on enquiry size and rate, unconfirmed enquiries expire after 7 days (REQ-X1 to X4), security headers (REQ-X5), product details checked before use and photo types limited (REQ-X6), keys kept encrypted in a key store (REQ-X7). Numbered 1.13 because 1.12 is on the open feature/brand-contrast branch. | Abhi |
 | 1.11 | 27 Nov 2026 | Hosting on Cloudflare with product pages rendered on demand (REQ-S8); a new product's page shows straight away (REQ-D8). | Abhi |
 | 1.10 | 27 Nov 2026 | Ready-made hampers use the same pieces as custom hampers and hold their stock (REQ-H8); pieces can be personalised inside hampers (REQ-H9, planned); enquiries keep the prices shown when sent (REQ-H10). Numbered 1.10 because 1.9 is on the open feature/admin-add-button branch. | Abhi |
 | 1.9 | 23 Nov 2026 | Add product button moved to the top bar of the Products list so it is reachable without scrolling (REQ-A14). | Abhi |
