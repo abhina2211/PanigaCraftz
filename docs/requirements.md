@@ -2,10 +2,10 @@
 
 | | |
 |---|---|
-| Document version | 1.8 |
+| Document version | 1.10 |
 | Status | Draft, to review with Neha |
 | Owner | Abhi (for Neha Koolwal, PanigaCraftz) |
-| Last updated | 23 Nov 2026 |
+| Last updated | 27 Nov 2026 |
 
 This is the single list of what the website must do. Every change to a requirement gets a new version number and a line in the change log at the bottom. Requirement ids never change or get reused; a dropped requirement is marked **Withdrawn** instead of deleted.
 
@@ -122,6 +122,9 @@ Several designs are decoupaged onto the same blank piece. For example, the Blueb
 | REQ-H5 | Cancelling an enquiry returns its held hamper stock. | Database rule drafted (phase 3) |
 | REQ-H6 | A hamper has 2 to 8 pieces. Its price is a basket, wrapping and card fee ($15) plus its pieces. It has a packaging choice and a card message of up to 30 words. | Built (v1.0), numbers are placeholders |
 | REQ-H7 | Single pieces added to the enquiry list on their own are not limited by stock, because Neha can make them to order. | Built (v1.0), to confirm with Neha |
+| REQ-H8 | Ready-made hampers are made from the same pieces customers can buy on their own. Each ready-made hamper lists its pieces and how many of each. It shows as available only while every counted piece is in stock or can be made on its base, and an enquiry for it holds those pieces the same way a custom hamper does (cancelling gives them back). Pieces whose stock isn't counted don't limit the hamper. | Built (v1.10) in the site and database (`supabase/hampers.sql`). Contents are set in the SQL editor for now; starting contents for the Christmas and Diwali hampers are placeholders. An admin screen for contents comes later |
+| REQ-H9 | Some pieces can be personalised inside a hamper, for example small jars and tea light holders. A piece keeps its own personalisation setting, field label and word limit inside a ready-made or custom hamper. The hamper builder shows the field for those pieces only, and the database checks the word limit. | Planned (v1.10), first week of December |
+| REQ-H10 | Enquiries keep the prices shown when they were sent: each line stores the product name and unit price, and a custom hamper also stores its basket and wrapping fee and the price of each piece. Later price changes don't change past enquiries. The admin panel shows the saved prices. | Built (v1.10), decided 24 Nov |
 
 ## 4. Open questions for Neha
 
@@ -132,10 +135,14 @@ Several designs are decoupaged onto the same blank piece. For example, the Blueb
 5. Should single pieces also stop at the stock count when they are not made to order (REQ-H7)? With bases, the same question applies to blanks: should an enquiry for a single made-to-order design hold a blank?
 6. Confirm the starting bases and which designs use each (REQ-B7), and the real number of blanks. The bottle vase, the blue rose vase set and the chocolate box are not linked to a base.
 
+7. Which pieces can be personalised inside a hamper (REQ-H9)? Small jars and tea light holders so far: confirm the exact products and their word limits.
+8. What is inside each ready-made hamper (REQ-H8)? Placeholders: Christmas & Kris Kringle = chocolate box, botanical candle, mini planter; Diwali = festive tea light set, chocolate box. Teacher, tea lover and new baby hampers have no contents yet.
+
 ## 5. Change log
 
 | Version | Date | Change | Asked by |
 |---|---|---|---|
+| 1.10 | 27 Nov 2026 | Ready-made hampers use the same pieces as custom hampers and hold their stock (REQ-H8); pieces can be personalised inside hampers (REQ-H9, planned); enquiries keep the prices shown when sent (REQ-H10). Numbered 1.10 because 1.9 is on the open feature/admin-add-button branch. | Abhi |
 | 1.8 | 23 Nov 2026 | Definition of done for feature branches (REQ-S6) and one feature branch at a time (REQ-S7). | Abhi |
 | 1.7 | 23 Nov 2026 | Bases for candles, vases and jars (REQ-B7); pick or create a base while adding a product (REQ-B8); add products with a photo from the admin panel (REQ-D8). | Abhi |
 | 1.6 | 23 Nov 2026 | Shared blank bases: designs linked to a base, ready-made first then blanks, for display and hampers, admin to manage bases (REQ-B1 to B6). | Abhi |

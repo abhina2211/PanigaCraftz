@@ -82,11 +82,18 @@ const baseLow = b => b.active && b.stock_qty <= LOW;
 const STATUS = { new: ['New', 'warn'], confirmed: ['Confirmed', 'info'], fulfilled: ['Done', 'good'], cancelled: ['Cancelled', 'off'] };
 const statusPill = s => `<span class="pill ${STATUS[s][1]}">${STATUS[s][0]}</span>`;
 const priceOf = id => (products.find(p => p.id === id) || {}).price_cents;
+/* Price of one unit of an enquiry line. Enquiries sent after supabase/hampers.sql keep the
+   price shown when they were sent (REQ-H10); older ones are priced at today's prices. */
+const lineUnit = i => {
+  if (i.product_name != null) return i.unit_price_cents;
+  let unit = priceOf(i.product_id);
+  if (i.enquiry_hamper_items.length) unit = (unit || 0) + i.enquiry_hamper_items.reduce((s, h) => s + (priceOf(h.product_id) || 0) * h.qty, 0);
+  return unit;
+};
 function enquiryTotal(e) {
   let cents = 0, quote = false;
   e.enquiry_items.forEach(i => {
-    let unit = priceOf(i.product_id);
-    if (i.enquiry_hamper_items.length) unit = (unit || 0) + i.enquiry_hamper_items.reduce((s, h) => s + (priceOf(h.product_id) || 0) * h.qty, 0);
+    const unit = lineUnit(i);
     if (unit == null) quote = true; else cents += unit * i.qty;
   });
   return money(cents) + (quote ? ' + quote' : '');
@@ -164,7 +171,7 @@ const screens = {
           ${phone ? `<a class="adm-btn" href="tel:${esc(phone)}">Call</a><a class="adm-btn" href="https://wa.me/${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
         </div></div>
       <div class="adm-card"><h2>What they'd like</h2><ul class="adm-items">${e.enquiry_items.map(i => `<li>
-        <b>${i.qty} × ${esc(i.products?.name || i.product_id)}</b>
+        <b>${i.qty} × ${esc(i.product_name || i.products?.name || i.product_id)}${lineUnit(i) != null ? ` · ${money(lineUnit(i))} each` : ''}</b>
         ${i.enquiry_hamper_items.length ? `<small>In the hamper: ${i.enquiry_hamper_items.map(h => `${h.qty} × ${esc(h.products?.name)}`).join(', ')}</small>` : ''}
         ${i.personalisation_text ? `<small>Personalise with: <i>“${esc(i.personalisation_text)}”</i></small>` : ''}
         ${i.packaging ? `<small>Packaging: ${esc(i.packaging)}</small>` : ''}

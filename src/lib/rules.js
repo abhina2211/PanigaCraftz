@@ -35,18 +35,23 @@ export function checkPers(p, text) {
    count: ready-made stock, or a blank base it can be made on (REQ-H1, REQ-B4). */
 export const hamperEligible = p => !!(p && p.hamper && (typeof p.stock === 'number' || p.base) && p.price != null);
 const baseOf = p => p && p.base ? BASES.find(b => b.id === p.base) : null;
+/* Pieces inside a ready-made hamper (REQ-H8), or none. */
+export const piecesOf = p => (p && !p.builder && Array.isArray(p.pieces) ? p.pieces : []);
+/* A piece limits a hamper only when its stock is counted or it is made on a base. */
+const counted = p => !!(p && (typeof p.stock === 'number' || baseOf(p)));
 
 /* What is left after the hamper lines in the enquiry list (other than excludeKey) take
    their pieces: ready-made pieces first, then blanks from the piece's base, the same
-   order the database uses. Lines for single pieces are not counted: those are enquiries
-   Neha confirms herself (REQ-H7). Returns { ready: {productId: n}, blanks: {baseId: n} }. */
+   order the database uses. Ready-made hampers take the pieces they list (REQ-H8). Lines
+   for single pieces are not counted: those are enquiries Neha confirms herself (REQ-H7). Returns { ready: {productId: n}, blanks: {baseId: n} }. */
 export function stockLeft(bag, excludeKey) {
   const ready = {}, blanks = {};
   PRODUCTS.forEach(p => { if (typeof p.stock === 'number') ready[p.id] = p.stock; });
   BASES.forEach(b => { blanks[b.id] = b.stock; });
   (bag || []).forEach(l => {
-    if (l.key === excludeKey || !l.opts || !Array.isArray(l.opts.items)) return;
-    l.opts.items.forEach(it => take(it.id, it.qty * l.qty, ready, blanks));
+    if (l.key === excludeKey) return;
+    const items = l.opts && Array.isArray(l.opts.items) ? l.opts.items : piecesOf(byId(l.id));
+    items.forEach(it => { if (counted(byId(it.id))) take(it.id, it.qty * l.qty, ready, blanks); });
   });
   return { ready, blanks };
 }
@@ -95,6 +100,18 @@ export function checkHamper(items, hamperQty, bag, excludeKey, note) {
   return { ok: !errors.length, errors, pieces };
 }
 
+/* Check a ready-made hamper ordered qty times: every counted piece inside must still be
+   available after the other hamper lines in the enquiry list (REQ-H8). */
+export function checkReadyHamper(p, qty, bag, excludeKey) {
+  const { ready, blanks } = stockLeft(bag, excludeKey);
+  for (const it of piecesOf(p)) {
+    const q = byId(it.id);
+    if (!q) return { ok: false, msg: `${p.name} is not available right now.` };
+    if (counted(q) && take(it.id, it.qty * qty, ready, blanks) > 0) return { ok: false, msg: `${p.name}: not enough ${q.name} left.` };
+  }
+  return { ok: true };
+}
+
 /* Price of one custom hamper: basket and wrapping fee plus its pieces. */
 export const hamperPrice = items => HAMPER_BUILDER.base + (items || []).reduce((s, it) => s + (byId(it.id)?.price || 0) * it.qty, 0);
 
@@ -108,6 +125,7 @@ export function checkLine(line, bag) {
     return r.ok ? { ok: true } : { ok: false, msg: r.errors[0] };
   }
   const r = checkPers(p, o.text);
-  return r.ok ? { ok: true } : { ok: false, msg: `${p.name}: ${r.msg}` };
+  if (!r.ok) return { ok: false, msg: `${p.name}: ${r.msg}` };
+  return piecesOf(p).length ? checkReadyHamper(p, line.qty, bag, line.key) : { ok: true };
 }
 
