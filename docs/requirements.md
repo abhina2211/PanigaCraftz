@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Document version | 1.11 |
+| Document version | 1.13 |
 | Status | Draft, to review with Neha |
 | Owner | Abhi (for Neha Koolwal, PanigaCraftz) |
 | Last updated | 27 Nov 2026 |
@@ -63,6 +63,7 @@ The gift note on the card stays a separate field limited to 150 characters.
 | REQ-S6 | A feature branch is merged into `development` only when it meets the definition of done in `CONTRIBUTING.md`: builds, tests pass, checked by hand (on a phone for admin changes), Supabase SQL applied and documented, this document updated, no secrets, pushed and reviewed in a pull request. | Agreed (v1.8) |
 | REQ-S7 | Only one feature branch is open at a time: the next one starts from `development` after the previous one is merged. | Agreed (v1.8) |
 | REQ-S8 | The site is hosted on a free public URL that works on a phone, deployed automatically from `main` on GitHub. Product pages are rendered on demand from Supabase on each visit, so new products, stock and prices show without a rebuild; the home and admin pages stay prebuilt. Supabase keys are set on the host, never committed. | Built (v1.11) on Cloudflare Workers free tier, `*.workers.dev` address until a domain is chosen |
+| REQ-S9 | An alternative storefront design ("Studio journal": warm paper background, arched photo frames, Fraunces and Figtree type, how-to-order shown straight after the hero) is tried on its own branch, so it can be compared with the current design before one is chosen. It changes the shop pages only, not the admin panel or any behaviour. See `docs/design-alternative.md`. | Trial (v1.13) on `feature/alt-design` |
 
 ### Database (Supabase)
 
@@ -144,6 +145,7 @@ Several designs are decoupaged onto the same blank piece. For example, the Blueb
 
 | Version | Date | Change | Asked by |
 |---|---|---|---|
+| 1.13 | 27 Nov 2026 | Alternative storefront design to compare with the current one (REQ-S9). Numbered 1.13 because 1.12 is on the open feature/brand-contrast branch. | Abhi |
 | 1.11 | 27 Nov 2026 | Hosting on Cloudflare with product pages rendered on demand (REQ-S8); a new product's page shows straight away (REQ-D8). | Abhi |
 | 1.10 | 27 Nov 2026 | Ready-made hampers use the same pieces as custom hampers and hold their stock (REQ-H8); pieces can be personalised inside hampers (REQ-H9, planned); enquiries keep the prices shown when sent (REQ-H10). Numbered 1.10 because 1.9 is on the open feature/admin-add-button branch. | Abhi |
 | 1.9 | 23 Nov 2026 | Add product button moved to the top bar of the Products list so it is reachable without scrolling (REQ-A14). | Abhi |
