@@ -94,6 +94,7 @@ Modelled on the Shopify mobile app and the WordPress dashboard: a home screen th
 | REQ-A11 | Common product changes happen in the list itself, without opening the product: stock + and − buttons, "In hampers" and "On website" switches, and tapping the price or the personalisation label. Each change saves straight away, shows "✓ Saved", and offers Undo for 6 seconds. Several quick stock taps save once ("8 → 11"). Products whose stock isn't counted can't be switched into hampers from the list. | Built (v1.5) |
 | REQ-A12 | Price and personalisation open a small panel from the bottom of the screen: price box; on/off, the question to ask, quick word-limit picks (5, 15, 30, 50) and + and −. | Built (v1.5) |
 | REQ-A13 | "Select" lets Neha tick several products (or select all shown) and then hide, show, add to or remove from hampers, set stock, set personalisation or change the price for all of them at once, with Undo. Adding to hampers skips products without a stock count and says how many. | Built (v1.5) |
+| REQ-A14 | The Add product button is always at the top of the Products list on a phone, so Neha never scrolls to the end to add a product: a "＋ Add" button in the top bar next to Select (Shopify mobile style). It is hidden while selecting several products. | Built (v1.9) |
 | REQ-A10 | A demo mode with made-up data (`/admin/?demo` on the dev server) lets the design be tried without touching real data. It is not in the live site. | Built (v1.4) |
 
 ### Shared blank bases (planters and other pieces)
@@ -143,6 +144,7 @@ Several designs are decoupaged onto the same blank piece. For example, the Blueb
 | Version | Date | Change | Asked by |
 |---|---|---|---|
 | 1.10 | 27 Nov 2026 | Ready-made hampers use the same pieces as custom hampers and hold their stock (REQ-H8); pieces can be personalised inside hampers (REQ-H9, planned); enquiries keep the prices shown when sent (REQ-H10). Numbered 1.10 because 1.9 is on the open feature/admin-add-button branch. | Abhi |
+| 1.9 | 23 Nov 2026 | Add product button moved to the top bar of the Products list so it is reachable without scrolling (REQ-A14). | Abhi |
 | 1.8 | 23 Nov 2026 | Definition of done for feature branches (REQ-S6) and one feature branch at a time (REQ-S7). | Abhi |
 | 1.7 | 23 Nov 2026 | Bases for candles, vases and jars (REQ-B7); pick or create a base while adding a product (REQ-B8); add products with a photo from the admin panel (REQ-D8). | Abhi |
 | 1.6 | 23 Nov 2026 | Shared blank bases: designs linked to a base, ready-made first then blanks, for display and hampers, admin to manage bases (REQ-B1 to B6). | Abhi |
