@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Document version | 1.11 |
+| Document version | 1.12 |
 | Status | Draft, to review with Neha |
 | Owner | Abhi (for Neha Koolwal, PanigaCraftz) |
 | Last updated | 27 Nov 2026 |
@@ -144,6 +144,7 @@ Several designs are decoupaged onto the same blank piece. For example, the Blueb
 
 | Version | Date | Change | Asked by |
 |---|---|---|---|
+| 1.12 | 27 Nov 2026 | Brand guidelines written down (`docs/brand-guidelines.md`); grey tagline and Sold out label darkened to pass the WCAG 4.5 contrast ratio. | Abhi |
 | 1.11 | 27 Nov 2026 | Hosting on Cloudflare with product pages rendered on demand (REQ-S8); a new product's page shows straight away (REQ-D8). | Abhi |
 | 1.10 | 27 Nov 2026 | Ready-made hampers use the same pieces as custom hampers and hold their stock (REQ-H8); pieces can be personalised inside hampers (REQ-H9, planned); enquiries keep the prices shown when sent (REQ-H10). Numbered 1.10 because 1.9 is on the open feature/admin-add-button branch. | Abhi |
 | 1.9 | 23 Nov 2026 | Add product button moved to the top bar of the Products list so it is reachable without scrolling (REQ-A14). | Abhi |
