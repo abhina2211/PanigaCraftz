@@ -4,8 +4,8 @@ import { test, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { PGlite } from '@electric-sql/pglite';
-import { fromRow, fromBaseRow, applyHamperPieces } from '../src/lib/supabase.js';
-import { PRODUCTS } from '../src/data/catalogue.js';
+import { fromRow, fromBaseRow, fromSizeRow, applyHamperPieces } from '../src/lib/supabase.js';
+import { PRODUCTS, HAMPER_BUILDER } from '../src/data/catalogue.js';
 
 const sql = f => readFileSync(new URL(`../supabase/${f}`, import.meta.url), 'utf8');
 const db = new PGlite();
@@ -18,13 +18,13 @@ before(async () => {
   await db.exec(`create role anon; create role authenticated;
     create schema auth; create table auth.users (id uuid primary key, email text);
     create function auth.uid() returns uuid language sql stable as $$ select null::uuid $$;`);
-  // Same order as the README: schema, seed, admin, bases, hampers. Each must be safe to run twice.
-  for (const f of ['schema.sql', 'seed.sql', 'admin.sql', 'bases.sql', 'hampers.sql', 'schema.sql', 'admin.sql', 'bases.sql', 'hampers.sql']) await db.exec(sql(f));
+  // Same order as the README: schema, seed, admin, bases, hampers, hamper-sizes. Each must be safe to run twice.
+  for (const f of ['schema.sql', 'seed.sql', 'admin.sql', 'bases.sql', 'hampers.sql', 'hamper-sizes.sql', 'schema.sql', 'admin.sql', 'bases.sql', 'hampers.sql', 'hamper-sizes.sql']) await db.exec(sql(f));
 });
 
 test('seed loads every product', async () => {
   const { rows } = await db.query('select count(*)::int as n from products');
-  assert.equal(rows[0].n, 35);
+  assert.equal(rows[0].n, 37);
 });
 
 test('products read back from the database match the catalogue', async () => {
@@ -50,19 +50,20 @@ test('REQ-H4: a hamper holds stock and cannot take more than there is', async ()
   await submit([{ id: 'h8', qty: 1, opts: { items: [{ id: 't2', qty: 3 }, { id: 'c1', qty: 1 }] } }]);
   assert.equal(await stock('t2'), 0);
   assert.equal(await stock('c1'), 7);
-  await assert.rejects(submit([{ id: 'h8', qty: 1, opts: { items: [{ id: 't2', qty: 1 }, { id: 'c1', qty: 1 }] } }]), /Not enough t2/);
+  await assert.rejects(submit([{ id: 'h8', qty: 1, opts: { items: [{ id: 't2', qty: 1 }, { id: 'c1', qty: 1 }, { id: 'j2', qty: 1 }] } }]), /Not enough t2/);
   assert.equal(await stock('c1'), 7, 'a failed enquiry changes nothing');
 });
 
 test('REQ-H3/H6: non-hamper pieces and wrong hamper sizes are rejected', async () => {
-  await assert.rejects(submit([{ id: 'h8', qty: 1, opts: { items: [{ id: 'p1', qty: 1 }, { id: 'c1', qty: 1 }] } }]), /Not enough p1/);
-  await assert.rejects(submit([{ id: 'h8', qty: 1, opts: { items: [{ id: 'c1', qty: 1 }] } }]), /2 to 8 pieces/);
+  await assert.rejects(submit([{ id: 'h8', qty: 1, opts: { items: [{ id: 'p1', qty: 1 }, { id: 'c1', qty: 1 }, { id: 'j2', qty: 1 }] } }]), /Not enough p1/);
+  await assert.rejects(submit([{ id: 'h8', qty: 1, opts: { items: [{ id: 'c1', qty: 1 }, { id: 'j2', qty: 1 }] } }]), /3 to 10 pieces/);
+  await assert.rejects(submit([{ id: 'h8', qty: 1, opts: { items: [{ id: 'j2', qty: 10 }, { id: 'c1', qty: 1 }] } }]), /3 to 10 pieces/);
   await assert.rejects(submit([{ id: 'c1', qty: 1, opts: { items: [{ id: 'j2', qty: 1 }] } }]), /Only the build-your-own hamper/);
 });
 
 test('REQ-H5: cancelling an enquiry returns its hamper stock', async () => {
   const before = await stock('j2');
-  const { rows } = await submit([{ id: 'h8', qty: 2, opts: { items: [{ id: 'j2', qty: 1 }, { id: 't1', qty: 1 }] } }]);
+  const { rows } = await submit([{ id: 'h8', qty: 2, opts: { items: [{ id: 'j2', qty: 1 }, { id: 't1', qty: 1 }, { id: 'c1', qty: 1 }] } }]);
   assert.equal(await stock('j2'), before - 2);
   await db.query(`update enquiries set status = 'cancelled' where ref = $1`, [rows[0].ref]);
   assert.equal(await stock('j2'), before);
@@ -85,10 +86,10 @@ test('REQ-B3/B4: ready-made pieces are used first, then blanks, shared between d
   assert.equal(await stock('p11'), 0);
   assert.equal(await blanks('planter-21'), 1);
   // 1 Aztec: no ready-made, takes the last blank
-  await submit([{ id: 'h8', qty: 1, opts: { items: [{ id: 'p12', qty: 1 }, { id: 'j2', qty: 1 }] } }]);
+  await submit([{ id: 'h8', qty: 1, opts: { items: [{ id: 'p12', qty: 1 }, { id: 'j2', qty: 1 }, { id: 'd3', qty: 1 }] } }]);
   assert.equal(await blanks('planter-21'), 0);
   // nothing left for either design
-  await assert.rejects(submit([{ id: 'h8', qty: 1, opts: { items: [{ id: 'p11', qty: 1 }, { id: 'j2', qty: 1 }] } }]), /Not enough p11/);
+  await assert.rejects(submit([{ id: 'h8', qty: 1, opts: { items: [{ id: 'p11', qty: 1 }, { id: 'j2', qty: 1 }, { id: 'd3', qty: 1 }] } }]), /Not enough p11/);
   // REQ-B5: cancelling the first gives back 1 ready-made Bluebell and 1 blank
   await db.query(`update enquiries set status = 'cancelled' where ref = $1`, [a.rows[0].ref]);
   assert.equal(await stock('p11'), 1);
@@ -108,21 +109,22 @@ const lines = async ref => (await db.query(
 test('REQ-H10: an enquiry keeps the prices shown when it was sent', async () => {
   const { rows } = await submit([
     { id: 'c1', qty: 2, opts: {} },
-    { id: 'h8', qty: 1, opts: { items: [{ id: 't1', qty: 1 }, { id: 'd2', qty: 1 }] } }
+    { id: 'h8', qty: 1, opts: { items: [{ id: 't1', qty: 1 }, { id: 'd2', qty: 1 }, { id: 'j2', qty: 1 }] } }
   ]);
   const ref = rows[0].ref;
   let [candle, hamper] = await lines(ref);
   assert.equal(candle.product_name, 'Botanical decoupage candle');
   assert.equal(candle.unit_price_cents, 2200);
-  assert.equal(hamper.hamper_fee_cents, 1500);
-  assert.equal(hamper.unit_price_cents, 1500 + 1800 + 2800, 'fee plus its pieces');
+  assert.equal(hamper.hamper_size, 'Small');
+  assert.equal(hamper.hamper_fee_cents, 800 + 600, 'small basket plus wrapping and card');
+  assert.equal(hamper.unit_price_cents, 1400 + 1800 + 2800 + 2000, 'fee plus its pieces');
   const pieces = (await db.query('select product_id, unit_price_cents from enquiry_hamper_items where enquiry_item_id = $1 order by product_id', [hamper.id])).rows;
-  assert.deepEqual(pieces.map(x => [x.product_id, x.unit_price_cents]), [['d2', 2800], ['t1', 1800]]);
+  assert.deepEqual(pieces.map(x => [x.product_id, x.unit_price_cents]), [['d2', 2800], ['j2', 2000], ['t1', 1800]]);
   // a later price change doesn't change the enquiry
   await db.exec(`update products set price_cents = 9900 where id in ('c1', 't1')`);
   [candle, hamper] = await lines(ref);
   assert.equal(candle.unit_price_cents, 2200);
-  assert.equal(hamper.unit_price_cents, 6100);
+  assert.equal(hamper.unit_price_cents, 8000);
   await db.exec(`update products set price_cents = 2200 where id = 'c1'; update products set price_cents = 1800 where id = 't1';`);
   await db.query(`update enquiries set status = 'cancelled' where ref = $1`, [ref]);
 });
@@ -153,6 +155,33 @@ test('REQ-H8: pieces whose stock is not counted do not limit a ready-made hamper
 test('REQ-H8: running hampers.sql again keeps contents Neha has changed', async () => {
   await db.exec(`delete from hamper_pieces where hamper_id = 'h4' and piece_id = 'j2'`);
   await db.exec(sql('hampers.sql'));
+  await db.exec(sql('hamper-sizes.sql')); // as the README says: hampers.sql replaces submit_enquiry
   const { rows } = await db.query(`select piece_id from hamper_pieces where hamper_id = 'h4'`);
   assert.deepEqual(rows.map(r => r.piece_id), ['t3']);
+});
+
+/* ---------- hamper sizes and hamper-only pieces (supabase/hamper-sizes.sql) ---------- */
+test('REQ-H6: the database sizes match the website', async () => {
+  const { rows } = await db.query('select * from hamper_sizes order by min_pieces');
+  assert.deepEqual(rows.map(fromSizeRow), HAMPER_BUILDER.sizes);
+  assert.equal((await db.query(`select price_cents from products where id = 'h8'`)).rows[0].price_cents, 600, '$6 wrapping and card');
+});
+
+test('REQ-H6: the size follows the pieces and keeps its basket price', async () => {
+  const { rows } = await submit([{ id: 'h8', qty: 1, opts: { items: [{ id: 'f1', qty: 4 }, { id: 'f2', qty: 3 }] } }]);
+  const [hamper] = await lines(rows[0].ref);
+  assert.equal(hamper.hamper_size, 'Large');
+  assert.equal(hamper.hamper_fee_cents, 1600 + 600);
+  assert.equal(hamper.unit_price_cents, 2200 + 4 * 1200 + 3 * 900);
+  // a new basket price doesn't change the enquiry, and running the file again keeps it
+  await db.exec(`update hamper_sizes set basket_cents = 2000 where id = 'large'`);
+  await db.exec(sql('hamper-sizes.sql'));
+  assert.equal((await db.query(`select basket_cents from hamper_sizes where id = 'large'`)).rows[0].basket_cents, 2000);
+  assert.equal((await lines(rows[0].ref))[0].hamper_fee_cents, 2200);
+  await db.exec(`update hamper_sizes set basket_cents = 1600 where id = 'large'`);
+  await db.query(`update enquiries set status = 'cancelled' where ref = $1`, [rows[0].ref]);
+});
+
+test('REQ-H12: chocolates and condiments are only sold inside a hamper', async () => {
+  await assert.rejects(submit([{ id: 'f1', qty: 1, opts: {} }]), /only sold inside a hamper/);
 });

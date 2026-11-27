@@ -2,7 +2,7 @@
    The URL and anon key come from .env (see .env.example). Without them the site
    runs entirely from src/data/catalogue.js, as before. */
 import { createClient } from '@supabase/supabase-js';
-import { PRODUCTS, BASES, statusFor } from '../data/catalogue.js';
+import { PRODUCTS, BASES, HAMPER_BUILDER, statusFor } from '../data/catalogue.js';
 
 const env = import.meta.env || {}; /* undefined when the tests run in plain Node */
 const url = env.PUBLIC_SUPABASE_URL;
@@ -15,6 +15,8 @@ export const adminClient = () => createClient(url, key, { auth: { persistSession
 
 /* Database rows in the shape the rest of the code already uses (see catalogue.js). */
 export const fromBaseRow = b => ({ id: b.id, name: b.name, stock: b.stock_qty });
+/* Hamper sizes (REQ-H6): pieces from min to max, and the basket price in dollars. */
+export const fromSizeRow = r => ({ id: r.id, name: r.name, min: r.min_pieces, max: r.max_pieces, basket: r.basket_cents / 100 });
 export function fromRow(r, bases = BASES) {
   const d = r.details || {};
   const stock = r.stock_qty;
@@ -53,16 +55,18 @@ export function loadLiveProducts({ fresh = false } = {}) {
   if (fresh) loading = null;
   return loading ??= (async () => {
     try {
-      const [{ data, error }, b, hp] = await Promise.all([
+      const [{ data, error }, b, hp, hs] = await Promise.all([
         supabase.from('products').select('*').order('id'),
         supabase.from('bases').select('*'), /* missing until supabase/bases.sql is run: then no bases */
-        supabase.from('hamper_pieces').select('*') /* missing until supabase/hampers.sql is run: then no contents */
+        supabase.from('hamper_pieces').select('*'), /* missing until supabase/hampers.sql is run: then no contents */
+        supabase.from('hamper_sizes').select('*').order('min_pieces') /* missing until supabase/hamper-sizes.sql is run: then the local sizes */
       ]);
       if (error) throw error;
       if (!data.length) return { source: 'local file', error: 'no products in the database yet' };
       BASES.splice(0, BASES.length, ...(b.error ? [] : b.data.map(fromBaseRow)));
       PRODUCTS.splice(0, PRODUCTS.length, ...data.map(r => fromRow(r, BASES)));
       applyHamperPieces(PRODUCTS, hp.error ? [] : hp.data, BASES);
+      if (!hs.error && hs.data.length) HAMPER_BUILDER.sizes.splice(0, HAMPER_BUILDER.sizes.length, ...hs.data.map(fromSizeRow));
       return { source: 'Supabase', count: data.length };
     } catch (e) {
       console.warn('[PanigaCraftz] Using the local catalogue; Supabase failed:', e.message || e);

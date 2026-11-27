@@ -221,6 +221,14 @@ dialog.qview::backdrop{background:rgba(40,12,15,.6)}
 .hb-sum{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px;position:sticky;top:90px}
 .hb-sum h3{font-size:22px;margin-bottom:8px}
 .hb-sum ul{list-style:none;padding:0;margin:0 0 12px;font-size:14px;color:var(--mute)}
+/* sections (REQ-H11) and sizes (REQ-H6) */
+.hb-list{display:grid;gap:20px}
+.hb-sec h3{font-size:18px;margin:0 0 10px}
+.hb-sizes{list-style:none;padding:0;margin:4px 0 8px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.hb-sizes li{border:1.5px solid var(--line);border-radius:12px;padding:8px 6px;text-align:center;font-size:13px;color:var(--mute)}
+.hb-sizes li b,.hb-sizes li span{display:block}.hb-sizes li b{font-size:15px;color:var(--ink)}
+.hb-sizes li.on{border-color:var(--red);background:var(--blushbg);color:var(--ink)}
+.hb-size-msg{margin:0 0 10px;font-size:14px;font-weight:700;color:var(--red-ink)}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 @media(max-width:900px){.hb{grid-template-columns:1fr}.hb-sum{position:static}}
 /* ---- Astro move: product pages ---- */

@@ -4,10 +4,17 @@
 
    REQ-P1..P4  per-product personalisation flag and word limit
    REQ-H1..H5  custom hampers may only contain pieces that are in stock
+   REQ-H6      hamper sizes: the number of pieces picks Small, Medium or Large
+   REQ-H12     chocolates and condiments are only sold inside hampers
    (see docs/requirements.md) */
-import { PRODUCTS, BASES, PERS_DEFAULT, HAMPER_BUILDER } from '../data/catalogue.js';
+import { PRODUCTS, BASES, PERS_DEFAULT, HAMPER_BUILDER, CATEGORIES } from '../data/catalogue.js';
 
 export const byId = id => PRODUCTS.find(p => p.id === id);
+
+/* Products in a hamper-only category (REQ-H12) never show in the shop and can't be
+   ordered on their own. */
+export const hamperOnly = p => !!(p && CATEGORIES.some(c => c.id === p.cat && c.hamperOnly));
+export const onShop = p => !!p && !hamperOnly(p);
 
 /* Words are runs of non-space characters, so "Ms Lee" is 2 and "Happy-Diwali!" is 1.
    The database uses the same rule (pc_word_count). */
@@ -75,14 +82,34 @@ export const available = (id, bag, excludeKey) => {
   return Math.max(0, (ready[id] || 0) + (b ? blanks[b.id] || 0 : 0));
 };
 
+/* ---------- hamper sizes (REQ-H6) ---------- */
+/* Sizes from smallest to largest; the live list comes from the hamper_sizes table. */
+const sizes = () => [...HAMPER_BUILDER.sizes].sort((a, b) => a.min - b.min);
+/* Fewest and most pieces any size takes. */
+export const hamperLimits = () => { const s = sizes(); return { min: s[0].min, max: Math.max(...s.map(x => x.max)) }; };
+/* The size a hamper with this many pieces is, or null when no size takes that many. */
+export const hamperSize = pieces => sizes().find(s => pieces >= s.min && pieces <= s.max) || null;
+/* The next size up from this many pieces, or null at the largest. */
+export const nextHamperSize = pieces => sizes().find(s => s.min > pieces) || null;
+/* Wrapping and card, the same for every size: the builder product's price. */
+export const wrapFee = () => PRODUCTS.find(p => p.builder)?.price ?? 0;
+/* Basket plus wrapping for a hamper with this many pieces. Below the smallest size it
+   shows the smallest basket, since that is where the customer is heading. */
+export const hamperFee = pieces => wrapFee() + (hamperSize(pieces) || sizes()[0]).basket;
+/* Lowest fee, shown as the builder's "From" price (pieces are added on top). */
+export const hamperFromPrice = () => wrapFee() + sizes()[0].basket;
+const pieceCount = items => (items || []).reduce((s, it) => s + (it && it.qty > 0 ? it.qty : 0), 0);
+
 /* Check a hamper (items = [{id, qty}]) ordered hamperQty times, against stock and the
    other hamper lines already in the enquiry list. Designs sharing a base share its blanks. */
 export function checkHamper(items, hamperQty, bag, excludeKey, note) {
   const errors = [];
   const list = (items || []).filter(it => it && it.qty > 0);
-  const pieces = list.reduce((s, it) => s + it.qty, 0);
-  if (pieces < HAMPER_BUILDER.minItems) errors.push(`Choose at least ${HAMPER_BUILDER.minItems} pieces.`);
-  if (pieces > HAMPER_BUILDER.maxItems) errors.push(`A hamper holds up to ${HAMPER_BUILDER.maxItems} pieces.`);
+  const pieces = pieceCount(list);
+  const { min, max } = hamperLimits();
+  if (pieces < min) errors.push(`Choose at least ${min} pieces.`);
+  else if (pieces > max) errors.push(`A hamper holds up to ${max} pieces.`);
+  else if (!hamperSize(pieces)) errors.push(`No hamper size holds ${pieces} pieces.`);
   const { ready, blanks } = stockLeft(bag, excludeKey);
   list.forEach(it => {
     const p = byId(it.id);
@@ -97,7 +124,7 @@ export function checkHamper(items, hamperQty, bag, excludeKey, note) {
   });
   const nw = wordCount(note);
   if (nw > HAMPER_BUILDER.noteWords) errors.push(`Keep the card message to ${HAMPER_BUILDER.noteWords} words (you have ${nw}).`);
-  return { ok: !errors.length, errors, pieces };
+  return { ok: !errors.length, errors, pieces, size: hamperSize(pieces) };
 }
 
 /* Check a ready-made hamper ordered qty times: every counted piece inside must still be
@@ -112,14 +139,15 @@ export function checkReadyHamper(p, qty, bag, excludeKey) {
   return { ok: true };
 }
 
-/* Price of one custom hamper: basket and wrapping fee plus its pieces. */
-export const hamperPrice = items => HAMPER_BUILDER.base + (items || []).reduce((s, it) => s + (byId(it.id)?.price || 0) * it.qty, 0);
+/* Price of one custom hamper: its size's basket, wrapping and card, plus its pieces. */
+export const hamperPrice = items => hamperFee(pieceCount(items)) + (items || []).reduce((s, it) => s + (byId(it.id)?.price || 0) * it.qty, 0);
 
 /* Check one enquiry-list line against every rule. Used when a saved list is loaded,
    because stock and limits can change between visits. */
 export function checkLine(line, bag) {
   const p = byId(line.id), o = line.opts || {};
   if (!p) return { ok: false, msg: 'A piece in your list is no longer sold.' };
+  if (hamperOnly(p)) return { ok: false, msg: `${p.name} is only sold inside a hamper.` };
   if (p.builder) {
     const r = checkHamper(o.items, line.qty, bag, line.key, o.note);
     return r.ok ? { ok: true } : { ok: false, msg: r.errors[0] };

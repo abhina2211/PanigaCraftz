@@ -1,7 +1,7 @@
 /* Home page behaviour: hero carousel, recent products, shop filters, quick view,
    build-your-own hamper and the custom order form. Menus, footer, categories and
    the Instagram strip are already in the HTML, made by Astro at build time. */
-import { CATEGORIES, HAMPER_TYPES, OCCASIONS, HAMPER_BUILDER, PRODUCTS } from '../data/catalogue.js';
+import { SHOP_CATEGORIES, HAMPER_TYPES, OCCASIONS, HAMPER_BUILDER, HAMPER_SECTIONS, PRODUCTS } from '../data/catalogue.js';
 import { $, $$, esc, aud, byId, rules, catName, htName, occName, reduce, today, priceText, igPost, productUrl,
   pic, imgOf, statusHtml, packOptions, LEAF, state, currentPackaging, on, applyFestival, addToBag, bag,
   toast, copy, closeMenu, trackInterest, start } from './core.js';
@@ -34,7 +34,7 @@ on('festival', () => {
 
 /* ---------- product cards ---------- */
 let recentIds = [];
-const renderRail = () => { recentIds = [...PRODUCTS].sort((a, b) => b.added - a.added).slice(0, 6).map(p => p.id); $('#rail').innerHTML = recentIds.map(id => card(byId(id))).join(''); };
+const renderRail = () => { recentIds = PRODUCTS.filter(rules.onShop).sort((a, b) => b.added - a.added).slice(0, 6).map(p => p.id); $('#rail').innerHTML = recentIds.map(id => card(byId(id))).join(''); };
 const card = p => `<article class="p"><div class="img">${imgOf(p)}${p.badge ? `<span class="badge">${esc(p.badge)}</span>` : recentIds.includes(p.id) ? '<span class="badge new">New</span>' : ''}<button class="qv" data-quick="${p.id}" aria-label="Quick view: ${esc(p.name)}">Quick view</button></div>
  <div class="body"><span class="cat-l">${p.ht ? htName(p.ht) : catName(p.cat)}</span><h3><a class="plink" href="${productUrl(p)}">${esc(p.name)}</a></h3>${p.size || p.status ? `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">${statusHtml(p)}${p.size ? `<span class="size">${esc(p.size)}</span>` : ''}</div>` : ''}<p>${esc(p.d.split('. ')[0].replace(/\.$/, ''))}.</p>
  <div class="row"><span class="price"${p.price == null ? ' style="font-size:16px"' : ''}>${priceText(p)}</span>${p.builder ? `<button class="btn" data-build>Build</button>` : `<button class="btn" data-add="${p.id}"${p.status === 'sold' ? ' disabled' : ''}>Add</button>`}</div></div></article>`;
@@ -44,15 +44,15 @@ renderRail();
 let filter = 'all', ht = null, occ = null, list = [];
 function render() {
   const band = $('#priceBand').value, sort = $('#sort').value;
-  list = PRODUCTS.filter(p => (filter === 'all' || p.cat === filter) && (!ht || p.ht === ht) && (!occ || p.occ.includes(occ)));
+  list = PRODUCTS.filter(p => rules.onShop(p) && (filter === 'all' || p.cat === filter) && (!ht || p.ht === ht) && (!occ || p.occ.includes(occ)));
   if (band) { const [lo, hi] = band.split('-').map(Number); list = list.filter(p => p.price != null && p.price >= lo && p.price < hi); }
   if (sort === 'new') list.sort((a, b) => b.added - a.added);
   if (sort === 'low') list.sort((a, b) => (a.price ?? 1e9) - (b.price ?? 1e9));
   if (sort === 'high') list.sort((a, b) => (b.price ?? -1) - (a.price ?? -1));
   $('#shopTitle').textContent = occ ? occName(occ) + ' gifts' : ht ? htName(ht) : filter === 'all' ? 'All handmade pieces' : catName(filter);
-  $('#shopLead').textContent = occ ? `${list.length} pieces suited to this occasion.` : ht ? HAMPER_TYPES.find(h => h.id === ht).blurb + '.' : filter === 'all' ? `${list.length} handmade pieces. Pick a category or occasion to narrow it down.` : CATEGORIES.find(c => c.id === filter).blurb + '.';
+  $('#shopLead').textContent = occ ? `${list.length} pieces suited to this occasion.` : ht ? HAMPER_TYPES.find(h => h.id === ht).blurb + '.' : filter === 'all' ? `${list.length} handmade pieces. Pick a category or occasion to narrow it down.` : SHOP_CATEGORIES.find(c => c.id === filter).blurb + '.';
   $('#grid').innerHTML = list.map(card).join('') || '<p>Nothing here yet. Ask us about a custom order.</p>';
-  $('#filter').innerHTML = [{ id: 'all', name: 'All' }, ...CATEGORIES].map(c => `<button class="chip" data-f="${c.id}" aria-pressed="${filter === c.id && !occ}">${c.name}</button>`).join('');
+  $('#filter').innerHTML = [{ id: 'all', name: 'All' }, ...SHOP_CATEGORIES].map(c => `<button class="chip" data-f="${c.id}" aria-pressed="${filter === c.id && !occ}">${c.name}</button>`).join('');
   $('#subfilter').innerHTML = filter === 'hampers'
     ? [{ id: '', name: 'All hampers' }, ...HAMPER_TYPES].map(h => `<button class="chip" data-hf="${h.id}" aria-pressed="${(ht || '') === h.id}">${h.name}</button>`).join('')
     : OCCASIONS.map(o => `<button class="chip" data-occ="${o.id}" aria-pressed="${occ === o.id}">${o.name}</button>`).join('');
@@ -65,7 +65,7 @@ function fromHash() {
   const h = location.hash.slice(1);
   if (h === 'preview') { $('#fpreview').classList.add('on'); return false; }
   let m;
-  if (CATEGORIES.some(c => c.id === h)) { filter = h; ht = null; occ = null; }
+  if (SHOP_CATEGORIES.some(c => c.id === h)) { filter = h; ht = null; occ = null; }
   else if ((m = h.match(/^hampers-(\w+)$/)) && HAMPER_TYPES.some(x => x.id === m[1])) { filter = 'hampers'; ht = m[1]; occ = null; }
   else if ((m = h.match(/^gifts-(\w+)$/)) && OCCASIONS.some(o => o.id === m[1])) { filter = 'all'; ht = null; occ = m[1]; }
   else return false;
@@ -75,7 +75,7 @@ function fromHash() {
 /* ---------- quick view with personalisation ---------- */
 const dlg = $('#qview'); let qid = null, qq = 1, qset = [];
 function openQuick(id, set) {
-  qset = set && set.length ? set : PRODUCTS.map(p => p.id); qid = id; qq = 1; fillQuick();
+  qset = set && set.length ? set : PRODUCTS.filter(rules.onShop).map(p => p.id); qid = id; qq = 1; fillQuick();
   if (!dlg.open) { try { dlg.showModal(); } catch (e) { dlg.setAttribute('open', ''); } }
   trackInterest(id, 'quick_view');
 }
@@ -133,29 +133,55 @@ dlg.addEventListener('keydown', e => { if (e.target.matches('input,textarea,sele
 const builderId = () => (PRODUCTS.find(p => p.builder) || {}).id;
 let hb = {}; /* product id -> quantity in the hamper being built */
 const hbItems = () => Object.entries(hb).map(([id, qty]) => ({ id, qty }));
+/* Which builder section a piece goes in (REQ-H11): the last section takes the rest. */
+const sectionOf = p => HAMPER_SECTIONS.find(x => x.cats && x.cats.includes(p.cat)) || HAMPER_SECTIONS[HAMPER_SECTIONS.length - 1];
+const range = s => s.min === s.max ? `${s.min}` : `${s.min}–${s.max}`;
+/* What to tell the customer about the size (REQ-H6): it follows the number of pieces. */
+function sizeMessage(pieces) {
+  const { min, max } = rules.hamperLimits(), size = rules.hamperSize(pieces), next = rules.nextHamperSize(pieces);
+  if (!pieces) return `Add ${min} to ${max} pieces. The size follows how many you pick.`;
+  if (pieces < min) return `Add ${min - pieces} more for a ${next.name} hamper.`;
+  if (!size) return next ? `Add ${next.min - pieces} more for a ${next.name} hamper.` : `Remove ${pieces - max} to fit the largest hamper.`;
+  if (pieces >= max) return `${size.name} hamper. That's the most a hamper holds.`;
+  if (next && pieces === size.max) return `${size.name} hamper. Add ${next.min - pieces} more for ${next.name}.`;
+  return `${size.name} hamper. Room for ${size.max - pieces} more in this size.`;
+}
 function renderBuilder() {
   /* Trim anything that went out of stock while building. */
   Object.keys(hb).forEach(id => { const left = rules.available(id, bag); if (hb[id] > left) hb[id] = left; if (!hb[id]) delete hb[id]; });
   const pieces = hbItems().reduce((s, it) => s + it.qty, 0);
-  const full = pieces >= HAMPER_BUILDER.maxItems;
+  const { max } = rules.hamperLimits();
+  const full = pieces >= max;
   const eligible = PRODUCTS.filter(p => p.hamper && !p.builder);
   eligible.sort((a, b) => (rules.available(b.id, bag) > 0) - (rules.available(a.id, bag) > 0));
-  $('#hbItems').innerHTML = eligible.map(p => {
+  const item = p => {
     const left = rules.available(p.id, bag), n = hb[p.id] || 0, ok = left > 0;
     return `<li class="${ok ? '' : 'out'}"><div class="thumb">${imgOf(p)}</div><div class="info"><b>${esc(p.name)}</b><small>${priceText(p)}</small><small>${ok ? `${left} available` : 'Out of stock'}</small></div>
       <span class="qty"><button data-hb-dec="${p.id}" aria-label="One fewer ${esc(p.name)}"${n ? '' : ' disabled'}>−</button><span>${n}</span><button data-hb-inc="${p.id}" aria-label="One more ${esc(p.name)}"${ok && n < left && !full ? '' : ' disabled'}>+</button></span></li>`;
+  };
+  $('#hbItems').innerHTML = HAMPER_SECTIONS.map(sec => {
+    const here = eligible.filter(p => sectionOf(p) === sec);
+    return here.length ? `<section class="hb-sec" aria-labelledby="hbs-${sec.id}"><h3 id="hbs-${sec.id}">${esc(sec.name)}</h3><ul class="hb-items">${here.map(item).join('')}</ul></section>` : '';
   }).join('');
-  $('#hbChosen').innerHTML = pieces ? hbItems().map(it => `<li>${it.qty} x ${esc(byId(it.id).name)}</li>`).join('') : `<li>Add at least ${HAMPER_BUILDER.minItems} pieces.</li>`;
-  $('#hbPieces').textContent = `${pieces} of ${HAMPER_BUILDER.maxItems}`;
-  $('#hbBase').textContent = aud(HAMPER_BUILDER.base);
+  const size = rules.hamperSize(pieces);
+  $('#hbSizes').innerHTML = HAMPER_BUILDER.sizes.map(s => `<li${size && size.id === s.id ? ' class="on" aria-current="true"' : ''}><b>${esc(s.name)}</b><span>${range(s)} pieces</span><span>${aud(s.basket)} basket</span></li>`).join('');
+  $('#hbSizeMsg').textContent = sizeMessage(pieces);
+  $('#hbChosen').innerHTML = pieces ? hbItems().map(it => `<li>${it.qty} x ${esc(byId(it.id).name)}</li>`).join('') : '';
+  $('#hbPieces').textContent = `${pieces} of ${max}`;
+  const shownSize = size || rules.nextHamperSize(pieces) || HAMPER_BUILDER.sizes[0]; /* where the customer is heading */
+  $('#hbBasketLabel').textContent = `${shownSize.name} basket`;
+  $('#hbBasket').textContent = aud(shownSize.basket);
+  $('#hbWrap').textContent = aud(rules.wrapFee());
   $('#hbTotal').textContent = aud(rules.hamperPrice(hbItems()));
   const nw = rules.wordCount($('#hbNote').value);
   $('#hbNoteCount').textContent = `${nw} / ${HAMPER_BUILDER.noteWords} words`;
   const r = rules.checkHamper(hbItems(), 1, bag, null, $('#hbNote').value);
-  const shown = pieces ? r.errors : r.errors.filter(m => !m.startsWith('Choose at least'));
+  /* The size message already says how many to add, so don't repeat it as an error. */
+  const shown = r.errors.filter(m => !m.startsWith('Choose at least'));
   $('#hbErr').textContent = shown.join(' '); $('#hbErr').hidden = !shown.length;
   $('#hbNote').classList.toggle('field-error', nw > HAMPER_BUILDER.noteWords);
   $('#hbAdd').disabled = !r.ok;
+  $('#hbAdd').textContent = r.ok ? `Add ${r.size.name.toLowerCase()} hamper to enquiry` : 'Add hamper to enquiry';
 }
 on('bag', renderBuilder);
 const goBuild = () => { closeMenu(); setHash('build'); $('#build').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' }); };
