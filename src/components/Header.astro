@@ -1,7 +1,7 @@
 ---
 /* Announcement bar and main menu. The dropdowns are built here from the
    catalogue, so a new category appears in the menu without touching HTML. */
-import { CATEGORIES, HAMPER_TYPES } from '../data/catalogue.js';
+import { SHOP_CATEGORIES, HAMPER_TYPES } from '../data/catalogue.js';
 const caret = '<svg class="caret" viewBox="0 0 10 10"><path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>';
 ---
 <div class="bar" id="bar"><span id="announce">Handmade in Sydney. Australia-wide shipping.</span><span class="cd" id="countdown" hidden></span></div>
@@ -12,7 +12,7 @@ const caret = '<svg class="caret" viewBox="0 0 10 10"><path d="M1 3l4 4 4-4" fil
     <li><a href="/">Home</a></li>
     <li><button aria-expanded="false" aria-controls="dropProducts" data-drop>Products <Fragment set:html={caret} /></button>
       <ul class="drop" id="dropProducts">
-        {CATEGORIES.filter(c => c.id !== 'hampers').map(c => (
+        {SHOP_CATEGORIES.filter(c => c.id !== 'hampers').map(c => (
           <li><a href={`/#${c.id}`} data-cat={c.id}>{c.name}<small>{c.blurb}</small></a></li>
         ))}
         <li><a href="/#shop" data-cat="all">All products<small>Everything in one place</small></a></li>

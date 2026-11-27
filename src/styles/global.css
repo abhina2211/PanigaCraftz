@@ -12,7 +12,7 @@
 :root{color-scheme:light dark;
 --bg:light-dark(#ffffff,#1b1213);--soft:light-dark(#fbefee,#271a1b);--card:light-dark(#ffffff,#2a1c1e);
 --ink:light-dark(#2b1b1c,#f6ecea);--mute:light-dark(#6d5a5b,#c9b6b5);--line:light-dark(#f0dcdb,#3d2a2c);
---red:#c0403a;--red-ink:light-dark(#a8323a,#f08f88);--maroon:#6e1f24;--blush:#e8c4c6;--blushbg:light-dark(#f8e4e4,#33211f);--grey:#8a8183}
+--red:#c0403a;--red-ink:light-dark(#a8323a,#f08f88);--maroon:#6e1f24;--blush:#e8c4c6;--blushbg:light-dark(#f8e4e4,#33211f);--grey:light-dark(#736a6c,#8a8183)}
 :root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Nunito Sans",system-ui,sans-serif;overflow-x:clip}
@@ -122,6 +122,7 @@ footer h3{color:#fff;font-size:18px;margin-bottom:8px}
 footer a{display:block;text-decoration:none;padding:4px 0}footer a:hover{color:var(--blush)}
 footer button{background:none;border:0;color:inherit;padding:4px 0;cursor:pointer;font-size:15px;display:block;text-align:left}
 footer button:hover{color:var(--blush)}
+footer .credit{display:block;margin-top:24px;padding-top:14px;border-top:1px solid rgba(241,222,222,.25);font-size:13px;text-align:center}
 /* quick view */
 dialog.qview{border:0;padding:0;border-radius:22px;width:min(960px,94vw);max-height:92vh;overflow:auto;background:var(--bg);color:var(--ink);box-shadow:0 30px 80px rgba(0,0,0,.4)}
 dialog.qview::backdrop{background:rgba(40,12,15,.6)}
@@ -161,7 +162,7 @@ dialog.qview::backdrop{background:rgba(40,12,15,.6)}
 .bar .cd{display:inline-block;margin-left:8px;background:rgba(255,255,255,.18);padding:1px 10px;border-radius:99px;font-weight:800;white-space:nowrap}
 .fest-badge{display:inline-block;color:#fff;font-weight:800;font-size:13px;padding:4px 12px;border-radius:99px;margin-bottom:12px}
 .status{display:inline-block;font-size:12px;font-weight:800;padding:2px 9px;border-radius:99px;background:var(--soft);color:var(--mute)}
-.status.made{background:#fdf0dc;color:#8a5200}.status.sold{background:#eee;color:#777}
+.status.made{background:#fdf0dc;color:#8a5200}.status.sold{background:#eee;color:#5f5f5f}
 .status.in{background:#e6f2ea;color:#22663d}
 .size{font-size:13px;color:var(--mute)}
 .tools{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-top:14px}
@@ -221,6 +222,14 @@ dialog.qview::backdrop{background:rgba(40,12,15,.6)}
 .hb-sum{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px;position:sticky;top:90px}
 .hb-sum h3{font-size:22px;margin-bottom:8px}
 .hb-sum ul{list-style:none;padding:0;margin:0 0 12px;font-size:14px;color:var(--mute)}
+/* sections (REQ-H11) and sizes (REQ-H6) */
+.hb-list{display:grid;gap:20px}
+.hb-sec h3{font-size:18px;margin:0 0 10px}
+.hb-sizes{list-style:none;padding:0;margin:4px 0 8px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.hb-sizes li{border:1.5px solid var(--line);border-radius:12px;padding:8px 6px;text-align:center;font-size:13px;color:var(--mute)}
+.hb-sizes li b,.hb-sizes li span{display:block}.hb-sizes li b{font-size:15px;color:var(--ink)}
+.hb-sizes li.on{border-color:var(--red);background:var(--blushbg);color:var(--ink)}
+.hb-size-msg{margin:0 0 10px;font-size:14px;font-weight:700;color:var(--red-ink)}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 @media(max-width:900px){.hb{grid-template-columns:1fr}.hb-sum{position:static}}
 /* ---- Astro move: product pages ---- */

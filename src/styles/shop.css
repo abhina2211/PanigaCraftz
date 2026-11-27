@@ -226,6 +226,14 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
 .hb-sum{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px;position:sticky;top:100px;box-shadow:var(--shadow)}
 .hb-sum h3{font-size:24px;margin-bottom:8px}
 .hb-sum ul{list-style:none;padding:0;margin:0 0 12px;font-size:15px;color:var(--mute)}
+/* sections (REQ-H11) and sizes (REQ-H6) */
+.hb-list{display:grid;gap:22px}
+.hb-sec h3{font-size:20px;margin:0 0 10px}
+.hb-sizes{list-style:none;padding:0;margin:4px 0 8px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.hb-sizes li{border:1.5px solid var(--line);border-radius:var(--r);padding:8px 6px;text-align:center;font-size:13px;color:var(--mute)}
+.hb-sizes li b,.hb-sizes li span{display:block}.hb-sizes li b{font-family:var(--serif);font-weight:500;font-size:16px;color:var(--ink)}
+.hb-sizes li.on{border-color:var(--red);background:var(--blushbg);color:var(--ink)}
+.hb-size-msg{margin:0 0 10px;font-size:14px;font-weight:700;color:var(--red-ink)}
 
 /* meet the maker */
 .about{background:var(--blushbg)}
@@ -249,6 +257,7 @@ footer .wrap{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:28px}
 footer h3{color:#fff;font-size:19px;margin-bottom:10px}
 footer .hand{color:var(--blush);font-size:30px;margin-top:14px}
 footer a{display:block;text-decoration:none;padding:5px 0}footer a:hover{color:var(--blush);text-decoration:underline;text-underline-offset:3px}
+footer .credit{display:block;margin-top:28px;padding-top:16px;border-top:1px solid rgba(241,222,222,.25);font-size:13px;text-align:center}
 
 /* quick view */
 dialog.qview{border:0;padding:0;border-radius:var(--r);width:min(980px,94vw);max-height:92vh;overflow:auto;background:var(--bg);color:var(--ink);box-shadow:0 30px 80px rgba(0,0,0,.4)}

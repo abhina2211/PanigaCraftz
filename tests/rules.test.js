@@ -27,26 +27,50 @@ test('REQ-P3/P4: text over the limit or on a non-personalisable product is refus
 });
 
 test('REQ-H3: out-of-stock or non-hamper pieces cannot go in a hamper', () => {
-  assert.ok(rules.checkHamper([{ id: 'c1', qty: 1 }, { id: 'j2', qty: 1 }], 1, []).ok);
-  assert.ok(rules.checkHamper([{ id: 'c1', qty: 1 }, { id: 'c3', qty: 1 }], 1, []).ok);  // c3: no ready-made, but blank candle jars
-  assert.ok(!rules.checkHamper([{ id: 'c1', qty: 1 }, { id: 'p9', qty: 1 }], 1, []).ok);  // p9 not counted
-  assert.ok(!rules.checkHamper([{ id: 'c1', qty: 1 }, { id: 'p1', qty: 1 }], 1, []).ok); // p1 not a hamper piece
+  assert.ok(rules.checkHamper([{ id: 'c1', qty: 1 }, { id: 'j2', qty: 1 }, { id: 't1', qty: 1 }], 1, []).ok);
+  assert.ok(rules.checkHamper([{ id: 'c1', qty: 1 }, { id: 'c3', qty: 1 }, { id: 'j2', qty: 1 }], 1, []).ok);  // c3: no ready-made, but blank candle jars
+  assert.ok(!rules.checkHamper([{ id: 'c1', qty: 1 }, { id: 'j2', qty: 1 }, { id: 'p9', qty: 1 }], 1, []).ok);  // p9 not counted
+  assert.ok(!rules.checkHamper([{ id: 'c1', qty: 1 }, { id: 'j2', qty: 1 }, { id: 'p1', qty: 1 }], 1, []).ok); // p1 not a hamper piece
   assert.ok(!rules.checkHamper([{ id: 't2', qty: 4 }], 1, []).ok);                      // t2 stock 3, no base
 });
 
 test('REQ-H4: stock already held by hampers in the list counts', () => {
   const bag = [{ key: 'a', id: 'h8', qty: 1, opts: { items: [{ id: 't2', qty: 3 }] } }];
   assert.equal(rules.available('t2', bag), 0);
-  assert.ok(!rules.checkHamper([{ id: 't2', qty: 1 }, { id: 'c1', qty: 1 }], 1, bag).ok);
+  assert.ok(!rules.checkHamper([{ id: 't2', qty: 1 }, { id: 'c1', qty: 1 }, { id: 'j2', qty: 1 }], 1, bag).ok);
   // raising the same hamper to 2 needs 4, only 3 exist
-  assert.ok(!rules.checkLine({ ...bag[0], qty: 2, opts: { items: [{ id: 't2', qty: 2 }] } }, bag).ok);
+  assert.ok(!rules.checkLine({ ...bag[0], qty: 2, opts: { items: [{ id: 't2', qty: 2 }, { id: 'c1', qty: 1 }] } }, bag).ok);
 });
 
-test('REQ-H6: 2 to 8 pieces and a card message of up to 30 words', () => {
-  assert.ok(!rules.checkHamper([{ id: 'c1', qty: 1 }], 1, []).ok);
-  assert.ok(!rules.checkHamper([{ id: 'j2', qty: 9 }], 1, []).ok);
-  assert.ok(!rules.checkHamper([{ id: 'c1', qty: 1 }, { id: 'j2', qty: 1 }], 1, [], null, words(31)).ok);
-  assert.equal(rules.hamperPrice([{ id: 'c1', qty: 1 }, { id: 'j2', qty: 2 }]), 15 + 22 + 40);
+test('REQ-H6: 3 to 10 pieces and a card message of up to 30 words', () => {
+  assert.ok(!rules.checkHamper([{ id: 'c1', qty: 1 }, { id: 'j2', qty: 1 }], 1, []).ok);
+  assert.ok(rules.checkHamper([{ id: 'j2', qty: 10 }], 1, []).ok);          // j2: 10 in stock
+  assert.ok(!rules.checkHamper([{ id: 'j2', qty: 10 }, { id: 'c1', qty: 1 }], 1, []).ok);
+  assert.ok(!rules.checkHamper([{ id: 'c1', qty: 1 }, { id: 'j2', qty: 2 }], 1, [], null, words(31)).ok);
+});
+
+test('REQ-H6: the number of pieces picks the size, and two of a piece count as two', () => {
+  const size = n => rules.hamperSize(n)?.id ?? null;
+  assert.deepEqual([2, 3, 4, 5, 6, 7, 10, 11].map(size), [null, 'small', 'small', 'medium', 'medium', 'large', 'large', null]);
+  assert.equal(rules.checkHamper([{ id: 'c1', qty: 1 }, { id: 'j2', qty: 4 }], 1, []).size.id, 'medium');
+  assert.equal(rules.nextHamperSize(4).id, 'medium');
+  assert.equal(rules.nextHamperSize(8), null);
+  assert.deepEqual(rules.hamperLimits(), { min: 3, max: 10 });
+});
+
+test('REQ-H6: price is the size\'s basket, $6 wrapping and card, plus the pieces', () => {
+  assert.equal(rules.wrapFee(), 6);
+  assert.equal(rules.hamperPrice([{ id: 'c1', qty: 1 }, { id: 'j2', qty: 2 }]), 8 + 6 + 22 + 40);              // small
+  assert.equal(rules.hamperPrice([{ id: 'c1', qty: 1 }, { id: 'j2', qty: 4 }]), 12 + 6 + 22 + 80);             // medium
+  assert.equal(rules.hamperPrice([{ id: 'j2', qty: 7 }]), 16 + 6 + 140);                                        // large
+  assert.equal(rules.hamperFromPrice(), 14);
+});
+
+test('REQ-H12: chocolates and condiments are only sold inside hampers', () => {
+  assert.ok(!rules.onShop(p('f1')));
+  assert.ok(rules.onShop(p('c1')));
+  assert.ok(!rules.checkLine({ key: 'x', id: 'f1', qty: 1, opts: {} }, []).ok);
+  assert.ok(rules.checkHamper([{ id: 'f1', qty: 2 }, { id: 'f2', qty: 1 }], 1, []).ok);
 });
 
 test('REQ-B2: a design shows in stock, made to order (blanks on its base) or sold out', async () => {

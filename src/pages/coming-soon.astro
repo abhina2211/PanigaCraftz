@@ -1,0 +1,61 @@
+---
+/* "Launching soon" page (REQ-S10). It is the home page while PUBLIC_COMING_SOON=true
+   (see src/lib/launch.js). Visitors can follow on Instagram or email Neha. No scripts. */
+import Base from '../layouts/Base.astro';
+import { IG } from '../data/catalogue.js';
+import { CONTACT_EMAIL, contactMailto } from '../lib/launch.js';
+
+const photos = [
+  ['/images/planters/CLDJx4NBfqU.jpg', 'Decoupage planter with paper flowers'],
+  ['/images/products/candle-1.jpg', 'Hand-decorated candle'],
+  ['/images/planters/CX__oHHB4Pj.jpg', 'Decoupage planter with leaves']
+];
+---
+<Base title="PanigaCraftz | Our online shop opens soon" description="Handmade decoupage planters, candles, gifts and hampers by Neha Koolwal, Sydney. Our online shop opens soon. Follow @panigacraftz_neha on Instagram." bare>
+  <section class="soon">
+    <div class="soon-copy">
+      <a class="logo" href="/" aria-label="PanigaCraftz home"><img src="/images/logo.png" alt="" width="58" height="58"><span>PanigaCraftz<small>Be crafty</small></span></a>
+      <p class="soon-eyebrow">Launching soon</p>
+      <h1>Something handmade is on its way</h1>
+      <p class="lead">We are getting the online shop ready to bring you decoupage planters, candles, personalised gifts and hampers, handmade in Sydney. Until then, you can see our product range on Instagram and connect with us to order.</p>
+      <div class="soon-cta">
+        <a class="btn" href={`https://www.instagram.com/${IG}/`}>Follow @{IG} on Instagram</a>
+        <a class="btn ghost" href={contactMailto()}>Email us</a>
+      </div>
+      <p class="soon-mail">Or write to <a href={contactMailto()}>{CONTACT_EMAIL}</a></p>
+    </div>
+    <div class="soon-art" aria-hidden="true">
+      {photos.map(([src, alt], i) => <figure class={`soon-ph soon-ph${i + 1}`}><img src={src} alt={alt} loading={i ? 'lazy' : 'eager'}></figure>)}
+    </div>
+  </section>
+  <footer class="soon-foot">
+    <p>Handmade in Sydney · Shipping Australia-wide</p>
+    <p class="soon-credit">Website built by MetaFinTech Pty Ltd</p>
+  </footer>
+</Base>
+
+<style>
+  .soon{min-height:calc(100svh - 80px);display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:clamp(28px,5vw,72px);align-items:center;padding:clamp(28px,6vw,80px) max(5vw,16px);max-width:1240px;margin:0 auto}
+  .soon .logo{margin-bottom:clamp(28px,5vw,56px)}
+  .soon-eyebrow{display:inline-block;margin:0 0 14px;padding:6px 14px;border-radius:999px;background:var(--blushbg);color:var(--red-ink);font-weight:800;font-size:14px;letter-spacing:.04em;text-transform:uppercase}
+  .soon h1{font-size:clamp(36px,5.4vw,60px)}
+  .soon .lead{font-size:18px;margin-top:18px}
+  .soon-cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
+  .soon-mail{color:var(--mute);margin:18px 0 0}
+  .soon-mail a{color:var(--red-ink);font-weight:700}
+  .soon-art{position:relative;aspect-ratio:1/1;width:100%;max-width:520px;margin-inline:auto}
+  .soon-ph{position:absolute;margin:0;border-radius:50%;overflow:hidden;background:#fff;border:8px solid var(--red);box-shadow:0 24px 50px -24px rgba(110,31,36,.55)}
+  .soon-ph img{width:100%;height:100%;object-fit:cover}
+  .soon-ph1{inset:6% 22% 22% 6%}
+  .soon-ph2{width:36%;aspect-ratio:1;right:2%;top:4%;border-color:var(--maroon);border-width:6px}
+  .soon-ph3{width:42%;aspect-ratio:1;right:6%;bottom:2%;border-color:var(--blush);border-width:6px}
+  .soon-foot{text-align:center;color:var(--mute);font-size:14px;margin:0;padding:16px;border-top:1px solid var(--line);background:var(--soft)}
+  .soon-foot p{margin:0}
+  .soon-credit{font-size:13px;margin-top:4px!important}
+  @media (max-width:820px){
+    .soon{grid-template-columns:1fr;min-height:0}
+    .soon-art{max-width:340px}
+    .soon .logo{margin-bottom:24px}
+    .soon-cta .btn{flex:1 1 100%}
+  }
+</style>

@@ -1,6 +1,6 @@
 # Alternative storefront design: "Studio journal"
 
-Branch `feature/alt-design`, taken from `development` on 27 Nov 2026. This is a trial, to compare with the current design before choosing one (REQ-S9).
+Branch `feature/alt-design`, taken from `development` on 27 Nov 2026. It started as a trial to compare with the original design. **Abhi chose it on 27 Nov 2026**, and it is now the shop design on `development` (REQ-S9, v1.17).
 
 ## How to compare
 

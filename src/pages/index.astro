@@ -4,8 +4,12 @@
    interactive parts (carousel, shop filters, quick view, hamper builder, custom
    order form) are filled in by src/scripts/home.js in the browser. */
 import Base from '../layouts/Base.astro';
-import { CATEGORIES, OCCASIONS, FESTIVALS, IG_STRIP } from '../data/catalogue.js';
+import { SHOP_CATEGORIES, OCCASIONS, FESTIVALS, IG_STRIP } from '../data/catalogue.js';
 import { pic } from '../lib/pictures.js';
+import { COMING_SOON } from '../lib/launch.js';
+
+/* Before the shop opens, the home page is the launching-soon page (REQ-S10). */
+if (COMING_SOON) return Astro.rewrite('/coming-soon/');
 
 const igPost = (id, kind = 'p') => `https://www.instagram.com/${kind}/${id}/`;
 const catPhoto = { planters: '/images/planters/CX__oHHB4Pj.jpg', candles: '/images/products/candle-1.jpg' };
@@ -40,7 +44,7 @@ const festButtons = [['auto', 'Auto (by date)'], ...Object.entries(FESTIVALS).ma
   <span class="hand">Pick a range</span><h2>Shop by category</h2>
   <p class="lead">Seven handmade ranges. Tap one to see what's in it.</p>
   <div class="cats" id="cats">
-    {CATEGORIES.map(c => (
+    {SHOP_CATEGORIES.map(c => (
       <a class="cat" href={`/#${c.id}`} data-cat={c.id}>
         <span class="cat-img">{catPhoto[c.id] ? <img src={catPhoto[c.id]} alt="" loading="lazy" /> : <Fragment set:html={pic(c.id, ...catPic[c.id])} />}</span>
         <b>{c.name}</b><small>{c.blurb}</small>
@@ -83,13 +87,15 @@ const festButtons = [['auto', 'Auto (by date)'], ...Object.entries(FESTIVALS).ma
 </div></section>
 
 <section class="band builder" id="build"><div class="wrap">
-  <div class="row-head"><div><span class="hand">Make it yours</span><h2>Build your own hamper</h2><p class="lead" id="hbLead">Pick pieces that are in stock right now. We add the basket, wrapping and a card.</p></div></div>
+  <div class="row-head"><div><span class="hand">Make it yours</span><h2>Build your own hamper</h2><p class="lead" id="hbLead">Pick pieces that are in stock right now. The size follows how many you pick, and each size comes in its own basket with wrapping and a card.</p></div></div>
   <div class="hb">
-    <ul class="hb-items" id="hbItems" aria-label="Pieces you can add"></ul>
+    <div class="hb-list" id="hbItems" aria-label="Pieces you can add"></div>
     <div class="hb-sum" aria-live="polite">
       <h3>Your hamper</h3>
+      <ol class="hb-sizes" id="hbSizes" aria-label="Hamper sizes"></ol>
+      <p class="hb-size-msg" id="hbSizeMsg"></p>
       <ul id="hbChosen"></ul>
-      <div class="totals"><div><span>Pieces</span><span id="hbPieces">0</span></div><div><span>Basket, wrapping and card</span><span id="hbBase"></span></div><div class="grand"><span>Hamper price</span><span id="hbTotal"></span></div></div>
+      <div class="totals"><div><span>Pieces</span><span id="hbPieces">0</span></div><div><span id="hbBasketLabel">Basket</span><span id="hbBasket"></span></div><div><span>Wrapping and card</span><span id="hbWrap"></span></div><div class="grand"><span>Hamper price</span><span id="hbTotal"></span></div></div>
       <div class="pers">
         <label>Packaging<select id="hbPack"></select></label>
         <label>Card message <span class="hint" id="hbNoteCount"></span><textarea id="hbNote" rows="2" placeholder="Happy birthday from all of us!"></textarea></label>
