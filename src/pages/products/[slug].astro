@@ -1,19 +1,19 @@
 ---
-/* ONE template for every product page. Astro calls getStaticPaths() at build time,
-   gets one entry per product in the catalogue, and writes /products/<slug>/index.html
-   for each. Adding a product to the catalogue (later: to Supabase) adds its page. */
+/* ONE template for every product page. It is rendered on demand: each visit to
+   /products/<slug>/ reads the products from Supabase (or the local catalogue) and
+   draws that product, so a product Neha adds in the admin panel has its page
+   straight away, with current stock and prices, without rebuilding the site. */
 import Base from '../../layouts/Base.astro';
 import { PRODUCTS, CATEGORIES, HAMPER_TYPES, OCCASIONS, IG } from '../../data/catalogue.js';
 import { persOf } from '../../lib/rules.js';
 import { imgOf } from '../../lib/pictures.js';
 import { loadLiveProducts } from '../../lib/supabase.js';
 
-export async function getStaticPaths() {
-  await loadLiveProducts(); /* products from Supabase when .env has the keys, else the local file */
-  return PRODUCTS.map(p => ({ params: { slug: p.slug }, props: { p } }));
-}
+export const prerender = false;
 
-const { p } = Astro.props;
+await loadLiveProducts({ fresh: true }); /* products from Supabase when the keys are set, else the local file */
+const p = PRODUCTS.find(x => x.slug === Astro.params.slug);
+if (!p) return new Response(null, { status: 404 }); /* unknown or hidden product: the 404 page */
 const pers = persOf(p);
 const group = p.ht ? HAMPER_TYPES.find(h => h.id === p.ht) : CATEGORIES.find(c => c.id === p.cat);
 const groupHref = p.ht ? `/#hampers-${p.ht}` : `/#${p.cat}`;
