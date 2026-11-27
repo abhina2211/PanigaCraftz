@@ -16,6 +16,7 @@ A feature branch is done, and can be merged into `development`, when every line 
 - [ ] **Checked by hand**: the changed pages were tried in `npm run dev`. For anything in the admin panel, also tried on a phone (or the browser's phone view), since Neha uses it on her phone.
 - [ ] **Checked against the real Supabase** when the site's or admin's database requests changed (harmless reads, or an update aimed at an id that doesn't exist), because the in-memory test database doesn't behave exactly like Supabase.
 - [ ] **Database changes applied and written down**: any new `supabase/*.sql` file is listed in `README.md` with when to run it and in what order, and has been run in the Supabase SQL editor. Running it twice must be safe.
+- [ ] **Branch log updated**: `docs/branch-log.md` has a row for the branch (date, component, what it changes), and the merge commit once merged.
 - [ ] **Requirements updated**: `docs/requirements.md` has the new or changed requirements, a raised version number and a change log line.
 - [ ] **No secrets**: no `.env` file, Supabase keys (anon or `service_role`), passwords or tokens in the commits. Only `.env.example`, with empty values, is committed.
 - [ ] **Pushed and reviewed**: the branch is pushed, a pull request into `development` is open, and Abhi has read the changes and approved it.
