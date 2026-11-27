@@ -5,23 +5,25 @@
    straight away, with current stock and prices, without rebuilding the site. */
 import Base from '../../layouts/Base.astro';
 import { CATEGORIES, HAMPER_TYPES, OCCASIONS, IG } from '../../data/catalogue.js';
-import { persOf } from '../../lib/rules.js';
+import { persOf, onShop, hamperFromPrice } from '../../lib/rules.js';
 import { imgOf, safeImg } from '../../lib/pictures.js';
 import { fetchLiveProducts } from '../../lib/supabase.js';
 
 export const prerender = false;
 
 /* This visit's own copy of the products: from Supabase when the keys are set, else the local file. */
-const { products: PRODUCTS } = await fetchLiveProducts();
+const { products: PRODUCTS, sizes } = await fetchLiveProducts();
+/* The build-your-own hamper's "From" price: its own wrap fee plus the smallest live basket (REQ-H6). */
+const fromPrice = x => '$' + hamperFromPrice(x.price ?? 0, sizes);
 const p = PRODUCTS.find(x => x.slug === Astro.params.slug);
-if (!p) return new Response(null, { status: 404 }); /* unknown or hidden product: the 404 page */
+if (!p || !onShop(p)) return new Response(null, { status: 404 }); /* unknown, hidden or hamper-only (REQ-H12): the 404 page */
 const pers = persOf(p);
 const group = p.ht ? HAMPER_TYPES.find(h => h.id === p.ht) : CATEGORIES.find(c => c.id === p.cat);
 const groupHref = p.ht ? `/#hampers-${p.ht}` : `/#${p.cat}`;
-const price = p.price == null ? 'Price on enquiry' : (p.priceFrom ? 'From $' : '$') + p.price;
+const price = p.builder ? 'From ' + fromPrice(p) : p.price == null ? 'Price on enquiry' : (p.priceFrom ? 'From $' : '$') + p.price;
 const statusText = { in: 'In stock', made: 'Made to order', sold: 'Sold out' }[p.status];
 const occasions = p.occ.map(id => OCCASIONS.find(o => o.id === id)).filter(Boolean);
-const related = PRODUCTS.filter(x => x.id !== p.id && x.cat === p.cat).slice(0, 4);
+const related = PRODUCTS.filter(x => x.id !== p.id && x.cat === p.cat && onShop(x)).slice(0, 4);
 ---
 <Base title={`${p.name} | PanigaCraftz`} description={p.d} image={safeImg(p.img) || undefined}>
   <section class="band"><div class="wrap">
@@ -82,7 +84,7 @@ const related = PRODUCTS.filter(x => x.id !== p.id && x.cat === p.cat).slice(0, 
           {related.map(r => (
             <a class="p plink-card" href={`/products/${r.slug}/`}>
               <div class="img"><Fragment set:html={imgOf(r)} /></div>
-              <div class="body"><h3>{r.name}</h3><span class="price">{r.price == null ? 'Price on enquiry' : (r.priceFrom ? 'From $' : '$') + r.price}</span></div>
+              <div class="body"><h3>{r.name}</h3><span class="price">{r.builder ? 'From ' + fromPrice(r) : r.price == null ? 'Price on enquiry' : (r.priceFrom ? 'From $' : '$') + r.price}</span></div>
             </a>
           ))}
         </div>

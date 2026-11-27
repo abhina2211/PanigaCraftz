@@ -17,7 +17,8 @@ export const htName = id => (HAMPER_TYPES.find(h => h.id === id) || {}).name || 
 export const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 export const today = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
 export const daysUntil = iso => Math.max(0, Math.ceil((new Date(iso + 'T00:00:00') - today()) / 864e5));
-export const priceText = p => p.price == null ? 'Price on enquiry' : (p.priceFrom ? 'From ' : '') + aud(p.price);
+/* The build-your-own hamper starts at its smallest basket plus wrapping (REQ-H6). */
+export const priceText = p => p.builder ? 'From ' + aud(rules.hamperFromPrice()) : p.price == null ? 'Price on enquiry' : (p.priceFrom ? 'From ' : '') + aud(p.price);
 export const igPost = (id, kind = 'p') => `https://www.instagram.com/${kind}/${id}/`;
 export const productUrl = p => `/products/${p.slug}/`;
 export const IG_DM = `https://ig.me/m/${IG}`;
@@ -93,6 +94,8 @@ const unitPrice = i => { const p = byId(i.id); return p.builder ? rules.hamperPr
 const unitText = i => byId(i.id).builder ? aud(unitPrice(i)) : priceText(byId(i.id));
 const persText = i => { const pc = rules.persOf(byId(i.id)); return pc ? pc.label : 'Personalisation'; };
 const itemsText = i => (i.opts.items || []).map(it => `${it.qty} x ${byId(it.id).name}`).join(', ');
+/* "Medium hamper. " before a custom hamper's contents (REQ-H6). */
+const sizeText = i => { const s = rules.hamperSize((i.opts.items || []).reduce((n, it) => n + it.qty, 0)); return s ? `${s.name} hamper. ` : ''; };
 const totals = () => {
   const priced = bag.filter(i => unitPrice(i) != null);
   const sub = priced.reduce((s, i) => s + unitPrice(i) * i.qty, 0);
@@ -106,7 +109,7 @@ export function renderBag() {
   $('#bagList').innerHTML = bag.length ? bag.map(i => {
     const p = byId(i.id), o = i.opts || {};
     return `<li><div class="thumb">${imgOf(p)}</div><div class="li-main"><b><a href="${productUrl(p)}">${esc(p.name)}</a></b><small>${unitText(i)}${unitPrice(i) != null ? ' each' : ''}</small>
-      ${o.items ? `<small>Contains: ${esc(itemsText(i))}</small>` : ''}${o.text ? `<small>${esc(persText(i))}: <i>${esc(o.text)}</i></small>` : ''}${o.packaging ? `<small>Packaging: ${esc(o.packaging)}</small>` : ''}${o.note ? `<small>Card: “${esc(o.note)}”</small>` : ''}
+      ${o.items ? `<small>${esc(sizeText(i))}Contains: ${esc(itemsText(i))}</small>` : ''}${o.text ? `<small>${esc(persText(i))}: <i>${esc(o.text)}</i></small>` : ''}${o.packaging ? `<small>Packaging: ${esc(o.packaging)}</small>` : ''}${o.note ? `<small>Card: “${esc(o.note)}”</small>` : ''}
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px"><span class="qty"><button data-dec="${esc(i.key)}" aria-label="One fewer">−</button><span>${i.qty}</span><button data-inc="${esc(i.key)}" aria-label="One more">+</button></span><button class="remove" data-remove="${esc(i.key)}">Remove</button></div></div></li>`;
   }).join('') : '<li>Your list is empty. Add a few pieces to get started.</li>';
   $('#bagSub').textContent = aud(t.sub) + (t.unpriced ? ' + quote' : '');
@@ -120,7 +123,7 @@ export function renderBag() {
 const bagMsg = () => {
   if (!bag.length) return '';
   const t = totals();
-  const lines = bag.map(i => { const p = byId(i.id), o = i.opts || {}; return `- ${i.qty} x ${p.name} (${unitText(i)}${unitPrice(i) != null ? ' each' : ''})` + (o.items ? `\n   Contains: ${itemsText(i)}` : '') + (o.text ? `\n   ${persText(i)}: ${o.text}` : '') + (o.packaging ? `\n   Packaging: ${o.packaging}` : '') + (o.note ? `\n   Card: "${o.note}"` : ''); });
+  const lines = bag.map(i => { const p = byId(i.id), o = i.opts || {}; return `- ${i.qty} x ${p.name} (${unitText(i)}${unitPrice(i) != null ? ' each' : ''})` + (o.items ? `\n   ${sizeText(i)}Contains: ${itemsText(i)}` : '') + (o.text ? `\n   ${persText(i)}: ${o.text}` : '') + (o.packaging ? `\n   Packaging: ${o.packaging}` : '') + (o.note ? `\n   Card: "${o.note}"` : ''); });
   return `Hi Neha! I'd like to order:\n${lines.join('\n')}\nEstimated total: ${aud(t.total)}${t.unpriced ? ' plus items to quote' : ''}\nPlease confirm availability, delivery and the final price. Thank you!`;
 };
 

@@ -57,7 +57,7 @@ const when = iso => {
 const demo = (import.meta.env.DEV || import.meta.env.PUBLIC_ADMIN_DEMO === '1') && new URLSearchParams(location.search).has('demo');
 if (!isConnected && !demo) { $('#notConnected').hidden = false; throw new Error('Supabase not connected'); }
 const sb = demo ? (await import('../lib/admin-demo.js')).demoClient() : adminClient();
-let me = null, products = [], enquiries = [], bases = [], basesReady = true;
+let me = null, products = [], enquiries = [], bases = [], basesReady = true, sizes = [];
 /* Products and blank bases live in two tables; quick edits work on either. */
 const rows = { products: () => products, bases: () => bases };
 const setRows = (table, list) => { if (table === 'bases') bases = list; else products = list; };
@@ -113,6 +113,9 @@ async function loadAll() {
   /* The bases table exists once supabase/bases.sql has been run. */
   const b = await sb.from('bases').select('*').order('name');
   basesReady = !b.error; bases = b.error ? [] : b.data;
+  /* Hamper sizes exist once supabase/hamper-sizes.sql has been run (REQ-H6). */
+  const hs = await sb.from('hamper_sizes').select('*').order('min_pieces');
+  sizes = hs.error ? [] : hs.data;
   if (e.error) toast(friendly(e.error.message)); else enquiries = e.data;
   const fresh = enquiries.filter(x => x.status === 'new').length;
   $('#newBadge').hidden = !fresh; $('#newBadge').textContent = fresh;
@@ -171,7 +174,7 @@ const screens = {
           ${phone ? `<a class="adm-btn" href="tel:${esc(phone)}">Call</a><a class="adm-btn" href="https://wa.me/${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
         </div></div>
       <div class="adm-card"><h2>What they'd like</h2><ul class="adm-items">${e.enquiry_items.map(i => `<li>
-        <b>${i.qty} × ${esc(i.product_name || i.products?.name || i.product_id)}${lineUnit(i) != null ? ` · ${money(lineUnit(i))} each` : ''}</b>
+        <b>${i.qty} × ${esc(i.product_name || i.products?.name || i.product_id)}${i.hamper_size ? ` (${esc(i.hamper_size)})` : ''}${lineUnit(i) != null ? ` · ${money(lineUnit(i))} each` : ''}</b>
         ${i.enquiry_hamper_items.length ? `<small>In the hamper: ${i.enquiry_hamper_items.map(h => `${h.qty} × ${esc(h.products?.name)}`).join(', ')}</small>` : ''}
         ${i.personalisation_text ? `<small>Personalise with: <i>“${esc(i.personalisation_text)}”</i></small>` : ''}
         ${i.packaging ? `<small>Packaging: ${esc(i.packaging)}</small>` : ''}
@@ -206,8 +209,12 @@ const screens = {
 
       <div class="adm-card adm-form"><h2>Price</h2>
         <label class="adm-field">Price in dollars<input name="price" type="number" inputmode="decimal" min="0" step="0.01" value="${p.price_cents == null ? '' : p.price_cents / 100}" placeholder="Leave empty for 'Price on enquiry'"></label>
-        ${p.is_hamper_builder ? '<p class="adm-help">For the build-your-own hamper this is the basket, wrapping and card fee. Pieces are added on top.</p>' : ''}
+        ${p.is_hamper_builder ? `<p class="adm-help">For the build-your-own hamper this is the wrapping and card fee, the same for every size.${sizes.length ? ' The basket for each size is below.' : ''} Pieces are added on top.</p>` : ''}
       </div>
+      ${p.is_hamper_builder && sizes.length ? `<div class="adm-card adm-form"><h2>Basket for each size</h2>
+        <p class="adm-help">The size follows how many pieces the customer picks.</p>
+        ${sizes.map(s => `<label class="adm-field">${esc(s.name)} (${s.min_pieces}${s.max_pieces > s.min_pieces ? '–' + s.max_pieces : ''} pieces) in dollars<input name="basket-${esc(s.id)}" data-size="${esc(s.id)}" type="number" inputmode="decimal" min="0" step="0.01" required value="${s.basket_cents / 100}"></label>`).join('')}
+      </div>` : ''}
 
       <div class="adm-card adm-form"><h2>Stock</h2>
         <label class="adm-toggle">Count stock for this product<input type="checkbox" name="tracked"${tracked ? ' checked' : ''}></label>
@@ -252,7 +259,7 @@ const screens = {
 
       <div class="adm-card adm-form"><h2>About it</h2>
         <label class="adm-field">Name<input name="name" required placeholder="e.g. Peacock feather vase"></label>
-        <label class="adm-field">Category<select name="category" required>${CATEGORIES.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select></label>
+        <label class="adm-field">Category<select name="category" required>${CATEGORIES.map(c => `<option value="${c.id}">${esc(c.name)}${c.hamperOnly ? ' (only in hampers)' : ''}</option>`).join('')}</select></label>
         <label class="adm-field" id="htBox" hidden>Hamper type<select name="hamper_type">${HAMPER_TYPES.map(h => `<option value="${h.id}">${esc(h.name)}</option>`).join('')}</select></label>
         <label class="adm-field">Short description<textarea name="description" rows="3" placeholder="What it is, size, what makes it special" style="font-size:17px;padding:10px 14px;border-radius:12px;border:1.5px solid var(--line)"></textarea></label>
         <label class="adm-field">Price in dollars<input name="price" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Leave empty for 'Price on enquiry'"></label></div>
@@ -438,7 +445,12 @@ document.addEventListener('click', async e => {
 document.addEventListener('change', e => {
   if (e.target.matches('[data-base-picker]')) { if (e.target.value === '__new') pickNewBase(e.target); else e.target.dataset.previous = e.target.value; return; }
   if (e.target.id === 'newPhoto') return showPhotoPreview(e.target);
-  if (e.target.name === 'category' && e.target.closest('#newForm')) { $('#htBox').hidden = e.target.value !== 'hampers'; return; }
+  if (e.target.name === 'category' && e.target.closest('#newForm')) {
+    $('#htBox').hidden = e.target.value !== 'hampers';
+    /* Chocolates and condiments are only sold inside hampers (REQ-H12), so they must be hamper pieces. */
+    if (CATEGORIES.find(c => c.id === e.target.value)?.hamperOnly) { e.target.form.elements.hamper.checked = true; toast('Only sold inside hampers: "Can go in custom hampers" is on'); }
+    return;
+  }
   const q = e.target.dataset.q; if (!q) return;
   quickAction(q, e.target.closest('[data-id]').dataset.id, e.target);
 });
@@ -470,10 +482,24 @@ async function saveProduct() {
   };
   const btn = document.querySelector('[data-action="save"]'); btn.disabled = true; btn.textContent = 'Saving';
   const { data, error } = await sb.from('products').update(change).eq('id', form.dataset.id).select();
+  if (!error && data.length && !(await saveBaskets(form))) { btn.disabled = false; btn.textContent = 'Save'; return; }
   btn.disabled = false; btn.textContent = 'Save';
   if (error || !data.length) { toast(error ? friendly(error.message) : 'Not saved: this account can\'t make changes.'); return; }
   products = products.map(p => p.id === data[0].id ? data[0] : p);
   setDirty(false); toast('Saved. The website shows it now.'); route();
+}
+
+/* Basket prices of the hamper sizes (REQ-H6), on the build-your-own hamper's page.
+   Saves only the ones that changed. Returns false if one could not be saved. */
+async function saveBaskets(form) {
+  for (const el of form.querySelectorAll('[data-size]')) {
+    const s = sizes.find(x => x.id === el.dataset.size), cents = Math.round(Number(el.value) * 100);
+    if (!s || el.value === '' || !(cents >= 0) || cents === s.basket_cents) continue;
+    const { data, error } = await sb.from('hamper_sizes').update({ basket_cents: cents }).eq('id', s.id).select();
+    if (error || !data.length) { toast(error ? friendly(error.message) : `${s.name} basket not saved: this account can't make changes.`); return false; }
+    sizes = sizes.map(x => x.id === s.id ? data[0] : x);
+  }
+  return true;
 }
 
 async function changeStatus(id, status) {

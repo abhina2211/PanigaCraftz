@@ -41,8 +41,12 @@ export const CATEGORIES = [
   { id: 'vases',     name: 'Vases',             blurb: 'Rose crackle and bottle art' },
   { id: 'jars',      name: 'Jars & boxes',      blurb: 'Cookie jars and treat boxes' },
   { id: 'decor',     name: 'Home décor',        blurb: 'Bathroom sets, coasters, stands' },
-  { id: 'hampers',   name: 'Gift hampers',      blurb: 'Festive, personal, corporate' }
+  { id: 'hampers',   name: 'Gift hampers',      blurb: 'Festive, personal, corporate' },
+  /* hamperOnly: not in the shop, only offered inside a build-your-own hamper (REQ-H12) */
+  { id: 'treats',    name: 'Chocolates & condiments', blurb: 'Only sold inside hampers', hamperOnly: true }
 ];
+/* Categories the shop shows (menus, tiles, filters). */
+export const SHOP_CATEGORIES = CATEGORIES.filter(c => !c.hamperOnly);
 
 export const HAMPER_TYPES = [
   { id: 'festive',   name: 'Festive hampers',   blurb: 'Christmas, Diwali, Lunar New Year, Eid' },
@@ -100,8 +104,27 @@ export const PACKAGING_DEFAULT = 'Classic kraft with ribbon';
 /* Personalisation used when a product just says pers: true (REQ-P2). */
 export const PERS_DEFAULT = { label: 'Name to add', words: 5 };
 
-/* Build-your-own hamper (REQ-H1..H5). Fee and limits are placeholders to confirm with Neha. */
-export const HAMPER_BUILDER = { base: 15, minItems: 2, maxItems: 8, noteWords: 30 };
+/* Build-your-own hamper (REQ-H1..H6). The size follows how many pieces are in it, so a
+   customer changes size by adding or removing pieces. Each size has its own basket; the
+   wrapping and card fee is the builder product's price ($6, the same for every size).
+   Basket prices are placeholders to confirm with Neha. In Supabase: the hamper_sizes table. */
+export const HAMPER_BUILDER = {
+  noteWords: 30,
+  sizes: [
+    { id: 'small',  name: 'Small',  min: 3, max: 4,  basket: 8 },
+    { id: 'medium', name: 'Medium', min: 5, max: 6,  basket: 12 },
+    { id: 'large',  name: 'Large',  min: 7, max: 10, basket: 16 }
+  ]
+};
+
+/* Sections of the hamper builder (REQ-H11): each lists the shop categories it shows.
+   The last one, without cats, takes everything else (chocolates, condiments, tea lights...). */
+export const HAMPER_SECTIONS = [
+  { id: 'planters', name: 'Planters', cats: ['planters'] },
+  { id: 'candles',  name: 'Candles',  cats: ['candles'] },
+  { id: 'jars',     name: 'Jars',     cats: ['jars'] },
+  { id: 'others',   name: 'Others' }
+];
 
 /* Blank bases shared by several designs (REQ-B1). stock = blanks ready to decorate.
    Placeholder counts until Neha confirms. In Supabase: the bases table. */
@@ -186,8 +209,11 @@ export const PRODUCTS = [
  P({ id:'h4', cat:'hampers', ht:'festive', name:'Diwali hamper', d:'Decorated tea lights, a treat box and festive touches for Diwali.', price:70, pieces:[{ id:'t3', qty:1 }, { id:'j2', qty:1 }], badge:'Festive', pers:true, occ:['diwali'], fest:['diwali'], added:21, col:['#fbe9d6','#c0403a'] }),
  P({ id:'h5', cat:'hampers', ht:'festive', name:'Christmas & Kris Kringle hamper', d:'A chocolate box, botanical candle and mini planter, made for Christmas surprises.', price:60, pieces:[{ id:'j2', qty:1 }, { id:'c1', qty:1 }, { id:'p8', qty:1 }], badge:'Christmas', pers:true, occ:['christmas','teacher'], fest:['christmas'], added:34, col:['#f8e4e4','#6e1f24'] }),
  P({ id:'h6', cat:'hampers', ht:'corporate', name:'Build-your-own corporate hamper', d:'Your logo on the card, festival-themed packaging, 10 to 500 boxes. Quoted per order.', price:85, priceFrom:true, badge:'Bulk pricing', pers:true, occ:['corporate','christmas'], fest:['christmas','lunar','diwali'], added:10, col:['#fbefee','#6e1f24'] }),
- P({ id:'h8', cat:'hampers', ht:'personal', builder:true, name:'Build-your-own hamper', d:'Pick the pieces yourself from what is in stock today. We add the basket, wrapping and a card.', price:15, priceFrom:true, badge:'Build your own', occ:['birthday','teacher','christmas','mothersday'], added:35, col:['#fbefee','#c0403a'] }),
- P({ id:'h7', cat:'hampers', ht:'corporate', name:'Staff desk gift set', d:'Pen stand, personalised name candle and a card. Quoted per order.', price:55, priceFrom:true, pers:true, occ:['corporate'], added:9, col:['#f3e6dc','#c0403a'] })
+ P({ id:'h8', cat:'hampers', ht:'personal', builder:true, name:'Build-your-own hamper', d:'Pick the pieces yourself from what is in stock today. We add the basket, wrapping and a card.', price:6, priceFrom:true, badge:'Build your own', occ:['birthday','teacher','christmas','mothersday'], added:35, col:['#fbefee','#c0403a'] }),
+ P({ id:'h7', cat:'hampers', ht:'corporate', name:'Staff desk gift set', d:'Pen stand, personalised name candle and a card. Quoted per order.', price:55, priceFrom:true, pers:true, occ:['corporate'], added:9, col:['#f3e6dc','#c0403a'] }),
+ /* Hamper-only fillers (REQ-H12): samples until Neha adds her own */
+ P({ id:'f1', cat:'treats', name:'Assorted chocolates', d:'A small box of assorted chocolates, added to hampers only.', price:12, stock:10, hamper:true, added:5, col:['#f3e6dc','#6e1f24'] }),
+ P({ id:'f2', cat:'treats', name:'Condiment jar', d:'A small jar of condiment, added to hampers only.', price:9, stock:6, hamper:true, added:4, col:['#fbe9d6','#c0403a'] })
 ];
 /* Ready-made hampers follow their pieces, which only exist once the list above is complete. */
 PRODUCTS.forEach(p => { if (p.pieces) p.status = statusFor(p, BASES, PRODUCTS); });

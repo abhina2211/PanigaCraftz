@@ -2,7 +2,7 @@
    The URL and anon key come from .env (see .env.example). Without them the site
    runs entirely from src/data/catalogue.js, as before. */
 import { createClient } from '@supabase/supabase-js';
-import { PRODUCTS, BASES, statusFor } from '../data/catalogue.js';
+import { PRODUCTS, BASES, HAMPER_BUILDER, statusFor } from '../data/catalogue.js';
 
 const env = import.meta.env || {}; /* undefined when the tests run in plain Node */
 const url = env.PUBLIC_SUPABASE_URL;
@@ -15,6 +15,8 @@ export const adminClient = () => createClient(url, key, { auth: { persistSession
 
 /* Database rows in the shape the rest of the code already uses (see catalogue.js). */
 export const fromBaseRow = b => ({ id: b.id, name: b.name, stock: b.stock_qty });
+/* Hamper sizes (REQ-H6): pieces from min to max, and the basket price in dollars. */
+export const fromSizeRow = r => ({ id: r.id, name: r.name, min: r.min_pieces, max: r.max_pieces, basket: r.basket_cents / 100 });
 export function fromRow(r, bases = BASES) {
   const d = r.details || {};
   const stock = r.stock_qty;
@@ -43,19 +45,21 @@ export function applyHamperPieces(products, rows, bases = BASES) {
   return products;
 }
 
-/* Read the live products, bases and hamper contents into new lists. Throws on failure;
-   returns null when the database has no products yet. */
+/* Read the live products, bases, hamper contents and hamper sizes into new lists. Throws
+   on failure; returns null when the database has no products yet. */
 async function readLive() {
-  const [{ data, error }, b, hp] = await Promise.all([
+  const [{ data, error }, b, hp, hs] = await Promise.all([
     supabase.from('products').select('*').order('id'),
     supabase.from('bases').select('*'), /* missing until supabase/bases.sql is run: then no bases */
-    supabase.from('hamper_pieces').select('*') /* missing until supabase/hampers.sql is run: then no contents */
+    supabase.from('hamper_pieces').select('*'), /* missing until supabase/hampers.sql is run: then no contents */
+    supabase.from('hamper_sizes').select('*').order('min_pieces') /* missing until supabase/hamper-sizes.sql is run: then the local sizes */
   ]);
   if (error) throw error;
   if (!data.length) return null;
   const bases = b.error ? [] : b.data.map(fromBaseRow);
   const products = applyHamperPieces(data.map(r => fromRow(r, bases)), hp.error ? [] : hp.data, bases);
-  return { products, bases };
+  const sizes = !hs.error && hs.data.length ? hs.data.map(fromSizeRow) : HAMPER_BUILDER.sizes;
+  return { products, bases, sizes };
 }
 
 /* In the browser: replace the local catalogue with the live products, in place, so every
@@ -70,6 +74,7 @@ export function loadLiveProducts() {
       if (!live) return { source: 'local file', error: 'no products in the database yet' };
       BASES.splice(0, BASES.length, ...live.bases);
       PRODUCTS.splice(0, PRODUCTS.length, ...live.products);
+      HAMPER_BUILDER.sizes.splice(0, HAMPER_BUILDER.sizes.length, ...live.sizes);
       return { source: 'Supabase', count: live.products.length };
     } catch (e) {
       console.warn('[PanigaCraftz] Using the local catalogue; Supabase failed:', e.message || e);
@@ -82,13 +87,14 @@ export function loadLiveProducts() {
    PRODUCTS list is left alone, so two visits at the same moment can't mix each other's
    data. Falls back to the local catalogue. */
 export async function fetchLiveProducts() {
-  if (!supabase) return { products: PRODUCTS, bases: BASES, source: 'local file' };
+  const local = { products: PRODUCTS, bases: BASES, sizes: HAMPER_BUILDER.sizes, source: 'local file' };
+  if (!supabase) return local;
   try {
     const live = await readLive();
-    return live ? { ...live, source: 'Supabase' } : { products: PRODUCTS, bases: BASES, source: 'local file' };
+    return live ? { ...live, source: 'Supabase' } : local;
   } catch (e) {
     console.warn('[PanigaCraftz] Using the local catalogue; Supabase failed:', e.message || e);
-    return { products: PRODUCTS, bases: BASES, source: 'local file', error: e.message || String(e) };
+    return { ...local, error: e.message || String(e) };
   }
 }
 
