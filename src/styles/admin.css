@@ -1,0 +1,209 @@
+/* Admin panel styles. Phone first: one column, big tap targets (at least 48 px),
+   16 px+ text so phones don't zoom, bottom tab bar within thumb reach.
+   From 900 px wide the tab bar turns into a left sidebar. Colours come from
+   global.css so the admin feels like the shop. */
+.adm{background:var(--soft);min-height:100dvh;font-size:16px}
+.adm h1,.adm h2,.adm h3{font-family:Lora,serif}
+.adm-muted{color:var(--mute)}
+.adm-error{color:#b3261e;font-weight:700;margin:0}
+
+/* sign in */
+.adm-gate{max-width:420px;margin:0 auto;padding:48px 20px;text-align:center}
+.adm-gate img{border-radius:50%;display:block;margin:0 auto}
+.adm-gate h1{font-size:28px;margin:12px 0 4px}
+.adm-gate .adm-card{text-align:left;margin-top:20px}
+
+/* cards and forms */
+.adm-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:0 1px 2px rgba(60,10,15,.08)}
+.adm-card+.adm-card{margin-top:12px}
+.adm-card h2{font-size:18px;margin:0 0 10px}
+.adm-form{display:grid;gap:14px}
+.adm-form label,.adm-field{display:grid;gap:6px;font-weight:700;font-size:15px}
+.adm-form input,.adm-form select,.adm-field input,.adm-field select{font-size:17px;min-height:50px;padding:10px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);width:100%}
+.adm-help{font-weight:400;font-size:14px;color:var(--mute);margin:0}
+.adm-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 18px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font:800 16px "Nunito Sans",system-ui,sans-serif;cursor:pointer;text-decoration:none}
+.adm-btn.primary{background:var(--red);border-color:var(--red);color:#fff}
+.adm-btn.danger{background:#b3261e;border-color:#b3261e;color:#fff}
+.adm-btn.ghost{background:transparent;border-color:transparent;color:inherit}
+.adm-btn.big{width:100%;min-height:54px;font-size:17px}
+.adm-btn:disabled{opacity:.5}
+
+/* app frame */
+.adm-app{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+.adm-top{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:6px;padding:10px 12px;padding-top:max(10px,env(safe-area-inset-top));background:var(--maroon);color:#fff}
+.adm-top h1{flex:1;font-size:20px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm-back,.adm-icon{width:44px;height:44px;display:grid;place-items:center;border:0;background:none;color:#fff;border-radius:12px;cursor:pointer}
+.adm-back:active,.adm-icon:active{background:rgba(255,255,255,.15)}
+.adm-screen{max-width:760px;margin:0 auto;padding:14px 14px 24px}
+
+/* bottom tab bar */
+.adm-tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(4,1fr);background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+.adm-tabs a{position:relative;display:grid;justify-items:center;gap:2px;padding:8px 0 10px;color:var(--mute);text-decoration:none;font-size:12px;font-weight:700}
+.adm-tabs svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round}
+.adm-tabs a[aria-current=page]{color:var(--red-ink)}
+.adm-tabs b{position:absolute;top:4px;left:calc(50% + 6px);background:var(--red);color:#fff;font-size:11px;min-width:18px;height:18px;border-radius:99px;display:grid;place-items:center;padding:0 5px}
+
+/* save bar sits above the tab bar */
+.adm-savebar{position:fixed;left:0;right:0;bottom:calc(64px + env(safe-area-inset-bottom));z-index:31;display:flex;align-items:center;gap:8px;padding:10px 14px;background:#2b1b1c;color:#fff;box-shadow:0 -6px 20px rgba(0,0,0,.2)}
+.adm-savebar span{flex:1;font-weight:700}
+.adm-savebar .ghost{color:#fff}
+
+/* home */
+.adm-hello{font-size:22px;margin:4px 0 14px}
+.adm-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.adm-stat{display:block;background:var(--card);border-radius:18px;padding:14px;text-decoration:none;color:var(--ink);box-shadow:0 1px 2px rgba(60,10,15,.08)}
+.adm-stat b{display:block;font:600 30px Lora,serif}
+.adm-stat span{color:var(--mute);font-size:14px;font-weight:700}
+.adm-stat.alert b{color:var(--red-ink)}
+.adm-section-title{font-size:17px;margin:22px 4px 8px;display:flex;justify-content:space-between;align-items:baseline}
+.adm-section-title a{font:700 14px "Nunito Sans",sans-serif;color:var(--red-ink);text-decoration:none}
+
+/* lists */
+.adm-search{position:sticky;top:64px;z-index:10;background:var(--soft);padding:2px 0 10px}
+.adm-search input{width:100%;font-size:17px;min-height:48px;padding:10px 14px 10px 42px;border-radius:14px;border:1.5px solid var(--line);background:var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='20' height='20'%3E%3Ccircle cx='11' cy='11' r='7' fill='none' stroke='%238a8183' stroke-width='2'/%3E%3Cpath d='M20 20l-4-4' stroke='%238a8183' stroke-width='2'/%3E%3C/svg%3E") 12px center no-repeat}
+.adm-chips{display:flex;gap:8px;overflow-x:auto;padding:10px 0 0;scrollbar-width:none}
+.adm-chips button{flex:none;min-height:40px;padding:0 14px;border-radius:99px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font:700 14px "Nunito Sans",sans-serif;cursor:pointer}
+.adm-chips button[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.adm-list{display:grid;gap:8px;list-style:none;margin:0;padding:0}
+.adm-row{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:16px;padding:10px 12px;text-decoration:none;color:var(--ink);min-height:72px;box-shadow:0 1px 2px rgba(60,10,15,.08)}
+.adm-row:active{background:var(--blushbg)}
+.adm-thumb{width:56px;height:56px;border-radius:12px;overflow:hidden;flex:none;background:var(--soft)}
+.adm-thumb img,.adm-thumb svg{width:100%;height:100%;object-fit:cover;display:block}
+.adm-row-main{flex:1;min-width:0}
+.adm-row-main b{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm-row-main small{display:block;color:var(--mute);font-size:14px}
+.adm-row-end{text-align:right;flex:none;display:grid;gap:4px;justify-items:end}
+.adm-row.hidden-product{opacity:.6}
+.adm-chev{color:var(--grey);flex:none}
+.adm-empty{text-align:center;color:var(--mute);padding:30px 10px}
+
+/* status pills: words plus colour, never colour alone */
+.pill{display:inline-block;font-size:13px;font-weight:800;padding:3px 10px;border-radius:99px;background:var(--soft);color:var(--mute);white-space:nowrap}
+.pill.good{background:#e6f2ea;color:#22663d}.pill.warn{background:#fdf0dc;color:#8a5200}
+.pill.bad{background:#fde7e6;color:#a8323a}.pill.info{background:#e6eef9;color:#2d5590}.pill.off{background:#eee;color:#666}
+
+/* edit screens */
+.adm-hero{display:flex;gap:14px;align-items:center;margin-bottom:12px}
+.adm-hero .adm-thumb{width:84px;height:84px;border-radius:16px}
+.adm-hero h2{font-size:22px;margin:0}
+.adm-stepper{display:grid;grid-template-columns:56px 1fr 56px;gap:8px;align-items:center}
+.adm-stepper button{height:56px;border-radius:14px;border:1.5px solid var(--line);background:var(--soft);font-size:26px;font-weight:700;color:var(--ink);cursor:pointer}
+.adm-stepper input{text-align:center;font-size:22px!important;font-weight:800}
+.adm-toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;font-weight:700;cursor:pointer}
+.adm-toggle small{display:block;font-weight:400;color:var(--mute);font-size:14px}
+.adm-toggle input{appearance:none;flex:none;width:52px;height:32px;border-radius:99px;background:#cfc6c6;position:relative;cursor:pointer;transition:background .2s}
+.adm-toggle input::after{content:"";position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .2s}
+.adm-toggle input:checked{background:#2e8b57}.adm-toggle input:checked::after{transform:translateX(20px)}
+.adm-sub{display:grid;gap:12px;padding:12px 0 2px;border-top:1px solid var(--line);margin-top:6px}
+.adm-sub[hidden]{display:none}
+.adm-seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.adm-seg label{display:grid;place-items:center;text-align:center;min-height:50px;padding:6px;border-radius:12px;border:1.5px solid var(--line);font-size:14px;font-weight:700;cursor:pointer;background:var(--bg)}
+.adm-seg input{position:absolute;opacity:0;pointer-events:none}
+.adm-seg label:has(input:checked){border-color:var(--red);background:var(--blushbg);color:var(--red-ink)}
+.adm-seg label:has(input:focus-visible){outline:3px solid var(--red)}
+
+/* enquiry detail */
+.adm-items{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.adm-items li{display:grid;gap:2px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.adm-items li:last-child{border:0;padding:0}
+.adm-items small{color:var(--mute);font-size:14px}
+.adm-contact{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:10px}
+.adm-actions{display:grid;gap:10px;margin-top:12px}
+.adm-kv{display:flex;justify-content:space-between;gap:10px;padding:4px 0}
+.adm-kv span:first-child{color:var(--mute)}
+
+/* toast and dialog */
+.adm-toast{position:fixed;left:50%;bottom:calc(140px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;visibility:hidden;background:#2b1b1c;color:#fff;padding:12px 18px;border-radius:14px;font-weight:700;transition:.2s;z-index:60;max-width:90vw;text-align:center}
+.adm-toast.show{opacity:1;visibility:visible;transform:translate(-50%,0)}
+.adm-dialog{border:0;border-radius:20px;padding:20px;max-width:360px;width:calc(100vw - 40px)}
+.adm-dialog::backdrop{background:rgba(40,12,15,.55)}
+.adm-dialog p{font-size:17px;margin:0 0 16px}
+.adm-dialog div{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* computer: sidebar instead of bottom tabs */
+@media (min-width:900px){
+  .adm-app{padding:0 0 0 220px}
+  .adm-tabs{top:0;right:auto;width:220px;grid-template-columns:1fr;align-content:start;gap:4px;padding:76px 12px 12px;border-top:0;border-right:1px solid var(--line)}
+  .adm-tabs a{grid-template-columns:28px 1fr auto;justify-items:start;align-items:center;gap:12px;padding:12px 14px;font-size:15px;border-radius:12px}
+  .adm-tabs a[aria-current=page]{background:var(--soft)}
+  .adm-tabs b{position:static}
+  .adm-top{padding-left:24px}
+  .adm-savebar{left:220px;bottom:0}
+  .adm-toast{bottom:90px}
+  .adm-stats{grid-template-columns:repeat(4,1fr)}
+}
+@media (prefers-reduced-motion:reduce){.adm *{transition:none!important}}
+/* toggles inside forms: keep the switch shape, not the text-field style */
+.adm-form .adm-toggle{display:flex}
+.adm-form .adm-toggle input{width:52px;height:32px;min-height:0;padding:0;border:0;border-radius:99px}
+.adm-row-main b{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.25}
+
+/* ---- quick edit in the products list (REQ-A11..A13) ---- */
+.adm-topbtn{border:0;border-radius:10px;background:rgba(255,255,255,.16);color:#fff;font:800 15px "Nunito Sans",sans-serif;min-height:40px;padding:0 14px;cursor:pointer}
+.adm-qcard{background:var(--card);border-radius:18px;padding:12px;box-shadow:0 1px 2px rgba(60,10,15,.08);position:relative}
+.adm-qcard.off .adm-q1{opacity:.6}
+.adm-qcard.sel{outline:2.5px solid var(--red)}
+.adm-q1{display:flex;align-items:center;gap:12px}
+.adm-qlink{display:flex;align-items:center;gap:12px;flex:1;min-width:0;color:var(--ink);text-decoration:none}
+.adm-price{flex:none;min-height:44px;min-width:64px;padding:0 10px;border:1.5px dashed #d9c4c3;border-radius:12px;background:var(--bg);font:800 16px "Nunito Sans",sans-serif;color:var(--ink);cursor:pointer}
+.adm-price.none{font-size:13px;color:var(--mute)}
+.adm-q2{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.adm-q2 .end{text-align:right}
+.adm-lab{display:block;font-size:12px;font-weight:800;color:var(--mute);margin-bottom:4px}
+.adm-mini{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:14px;overflow:hidden}
+.adm-mini button{width:46px;height:46px;border:0;background:var(--soft);font-size:22px;font-weight:800;color:var(--ink);cursor:pointer}
+.adm-mini button:disabled{opacity:.35}
+.adm-mini output{min-width:46px;text-align:center;font-weight:800;font-size:18px}
+.adm-pchip{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;border-radius:12px;border:0;background:var(--blushbg);color:var(--red-ink);font:800 14px "Nunito Sans",sans-serif;cursor:pointer;white-space:nowrap;text-decoration:none}
+.adm-pchip.off{background:#f1eded;color:var(--mute)}
+.adm-q3{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.adm-sw{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:48px;background:var(--soft);border-radius:12px;padding:6px 10px;font-weight:700;font-size:14px;cursor:pointer}
+.adm-sw input{appearance:none;flex:none;width:46px;height:28px;border-radius:99px;background:#cfc6c6;position:relative;cursor:pointer;margin:0}
+.adm-sw input::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .2s}
+.adm-sw input:checked{background:#2e8b57}.adm-sw input:checked::after{transform:translateX(18px)}
+.adm-sw input:disabled{opacity:.4;cursor:not-allowed}
+.adm-sw.na{color:var(--mute)}
+.adm-baseline{display:block;margin-top:6px;font-size:13px;font-weight:700;color:var(--mute);text-decoration:none}
+.adm-saved{position:absolute;top:8px;right:12px;font-size:12px;font-weight:800;color:#22663d}
+.adm-check{width:28px;height:28px;flex:none;border-radius:8px;border:2px solid #cbbcbc;display:grid;place-items:center;color:#fff;font-weight:900}
+.adm-qcard.sel .adm-check{background:var(--red);border-color:var(--red)}
+.adm-selecting .adm-qcard{cursor:pointer}
+/* bulk bar */
+.adm-bulk{position:fixed;left:0;right:0;bottom:0;z-index:32;background:#2b1b1c;color:#fff;padding:12px 12px calc(14px + env(safe-area-inset-bottom))}
+.adm-bulk b{display:block;margin-bottom:10px}
+.adm-bulk div{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.adm-bulk button{min-height:46px;border-radius:12px;border:0;background:rgba(255,255,255,.14);color:#fff;font:800 14px "Nunito Sans",sans-serif;cursor:pointer}
+.adm-bulk button:disabled{opacity:.4}
+.adm-app.bulk-on{padding-bottom:260px}
+/* toast with undo */
+.adm-toast{display:flex;align-items:center;gap:12px}
+.adm-toast button{border:0;background:none;color:#f3b7b3;font:800 16px "Nunito Sans",sans-serif;cursor:pointer;padding:6px 4px;min-height:40px}
+/* bottom sheet */
+.adm-sheet{margin:auto 0 0;max-width:none;width:100%;border:0;border-radius:22px 22px 0 0;padding:10px 16px calc(18px + env(safe-area-inset-bottom));background:var(--bg);color:var(--ink)}
+.adm-sheet::backdrop{background:rgba(40,12,15,.5)}
+.adm-grab{width:44px;height:5px;border-radius:9px;background:#ddd;margin:0 auto 12px}
+.adm-sheet h3{font-size:21px;margin:0 0 2px}
+.adm-sheet .sub{color:var(--mute);margin:0 0 14px;font-size:14px}
+.adm-sheet label.f{display:grid;gap:6px;font-weight:700;margin-bottom:12px}
+.adm-sheet input[type=text],.adm-sheet input[type=number]{font-size:18px;min-height:52px;padding:10px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);width:100%}
+.adm-presets{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:6px 0 10px}
+.adm-presets button{min-height:46px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);font:800 16px "Nunito Sans",sans-serif;color:var(--ink);cursor:pointer}
+.adm-presets button[aria-pressed=true]{border-color:var(--red);background:var(--blushbg);color:var(--red-ink)}
+.adm-sheet-actions{display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-top:16px}
+@media (min-width:900px){.adm-sheet{max-width:480px;margin:auto;border-radius:22px}.adm-bulk{left:220px}}
+/* toast: full width on phones so the message and Undo fit on one line */
+.adm-toast{left:12px;right:12px;bottom:calc(78px + env(safe-area-inset-bottom));transform:translateY(20px);max-width:none;text-align:left;justify-content:space-between}
+.adm-toast.show{transform:none}
+.adm-app.bulk-on~.adm-toast{bottom:calc(270px + env(safe-area-inset-bottom))}
+@media (min-width:900px){.adm-toast{left:calc(50% - 110px);right:auto;width:440px}}
+.adm-mini{display:inline-flex}.adm-q2 .end{flex:none}
+/* add a product: photo picker */
+.adm-photo{display:grid;place-items:center;min-height:180px;border:2px dashed #d9c4c3;border-radius:16px;background:var(--soft);cursor:pointer;font-weight:800;color:var(--mute);overflow:hidden}
+.adm-photo img{width:100%;max-height:320px;object-fit:cover;display:block}
+.adm-form textarea{width:100%;background:var(--bg);color:var(--ink);font-family:inherit}
+
+/* Add product button (REQ-A14): in the top bar of the Products list, Shopify mobile style,
+   so it is always on screen without scrolling. White so it stands out from Select. */
+.adm-topadd{display:inline-flex;align-items:center;text-decoration:none;background:#fff;color:var(--maroon);min-height:44px}
+.adm-topadd[hidden]{display:none}
+.adm-topadd:active{background:#f3e3e4}

@@ -2,53 +2,156 @@
 
 Storefront for PanigaCraftz, Neha Koolwal's handmade decoupage business in Sydney (Instagram @panigacraftz_neha).
 
-This folder is the single working version. It merges:
+Requirements and the delivery plan live in [`docs/requirements.md`](docs/requirements.md), which is versioned: update it with every change to what the site must do.
 
-- **The Claude chat design** (22 Nov 2026): logo and colour theme, header with Products and Hampers dropdowns, hero carousel, Recent products, Shop by category, Quick view, enquiry list, 7 categories from her recent Instagram posts.
-- **The other project** (`C:\work\NehaWebsite\panigaCraftz\panigaCraftz`, handover pack of 19 Nov): the 12 planters with real photos, names and sizes, the festival engine, personalisation (name, packaging, gift note), the 3-step custom order form with Australian validation, `BACKEND HOOK` markers, the "From our Instagram" strip, and the Supabase + Stripe plan.
-
-The old folder was only read; nothing in it was changed.
+The site is built with [Astro](https://astro.build). Astro turns the home and admin pages into plain HTML at build time. Product pages come from a single template and are drawn on each visit from the current products in Supabase, so a new product's page exists as soon as Neha adds it. The browser scripts add the interactive parts (filters, quick view, enquiry list, hamper builder).
 
 ## Run it
 
-No build step. Open `index.html` in a browser, or serve the folder:
+Needs Node.js 22 or later.
 
 ```
-npx serve .
+npm install        # once, downloads Astro and Tailwind into node_modules/
+npm run dev        # local site at http://localhost:4321, reloads on save
+npm test           # checks the business rules (word limits, hamper stock)
+npm run build      # writes the finished site to dist/
+npm run preview    # runs the built site the way Cloudflare does, to check the build
 ```
+
+## Connect Supabase
+
+Without this step the site runs from `src/data/catalogue.js`. With it, products, prices, stock and word limits come from the database.
+
+1. In Supabase, open **SQL Editor > New query**, paste all of `supabase/schema.sql` and press **Run**.
+2. New query again: paste all of `supabase/seed.sql` and **Run**. This loads the 37 products. (`npm run seed` rewrites that file from the catalogue.)
+3. Copy `.env.example` to `.env` and paste the **anon public** key from **Project Settings > API** after `PUBLIC_SUPABASE_ANON_KEY=`. Never use the `service_role` key here.
+4. Restart `npm run dev`. In the browser console, `document.documentElement.dataset.catalogue` says `Supabase` when it is working.
+
+Stock is now changed in Supabase (**Table Editor > products > stock_qty**) until Neha's admin screen is built.
+
+## Blank bases (shared planters)
+
+Run `supabase/bases.sql` once in the SQL editor (after `admin.sql`). It adds the blank-bases table and starting bases for planters, candles, vases and jars (3 blanks each, a placeholder), links the designs listed in `docs/requirements.md` (REQ-B7), and changes nothing else. Running it again is safe: it only adds what is missing. Until it is run, the site and admin work as before without bases.
+
+## Ready-made hamper contents and saved prices
+
+Run `supabase/hampers.sql` once in the SQL editor, after `bases.sql`. It lets a ready-made hamper list the pieces inside it (table `hamper_pieces`), so an enquiry for the hamper holds those pieces' stock and the hamper shows Sold out when a piece runs out (REQ-H8). It also makes every enquiry keep the names and prices shown when it was sent (REQ-H10). Starting contents are placeholders for the Christmas and Diwali hampers; change them in **Table Editor > hamper_pieces** until the admin panel can. Running it again is safe and never changes contents you have set. If you ever re-run `schema.sql` or `bases.sql`, run `hampers.sql` again afterwards.
+
+## Hamper sizes
+
+Run `supabase/hamper-sizes.sql` once in the SQL editor, after `hampers.sql`. It adds the hamper sizes (table `hamper_sizes`: Small 3 to 4 pieces, Medium 5 to 6, Large 7 to 10, each with a placeholder basket price), changes the build-your-own hamper's $15 placeholder fee to the $6 wrapping and card fee, keeps each custom hamper's size on its enquiry, and refuses chocolates and condiments ordered on their own (REQ-H6, REQ-H12). Neha changes basket prices on the build-your-own hamper's page in the admin panel. Running it again is safe and never changes basket prices she has set. If you ever re-run `schema.sql` or `hampers.sql`, run `hamper-sizes.sql` again afterwards. Until it is run, the site uses the sizes in `src/data/catalogue.js`, but the database still accepts 2 to 8 pieces at the old fee, so run it before going live with this change. It doesn't add any chocolates or condiments: the two samples are only in `seed.sql`, so Neha adds her own in the admin panel (category "Chocolates & condiments"), and the builder shows none until she does.
+
+## Product photos
+
+To let Neha add products with photos from the admin panel, run `supabase/photos.sql` once in the SQL editor (after `admin.sql`). It creates a public `product-photos` storage folder that only admins can upload to. Without it, products can still be added, just without a photo.
+
+## Limits against fake enquiries
+
+Run `supabase/security.sql` once in the SQL editor, after `hampers.sql` and `photos.sql`. It stops anyone holding all the hamper stock with fake enquiries: an enquiry can have at most 20 items and 40 hamper pieces, and each email address can send 3 an hour (30 an hour for the whole shop). It also cancels enquiries Neha hasn't confirmed within 7 days, every hour, which gives their stock back, so **Neha marks real enquiries Confirmed**. It turns on Supabase's `pg_cron` extension for this; if that fails, turn it on in **Database > Extensions** and run the file again. Change the numbers in **Table Editor > enquiry_limits**. Running it again is safe and keeps the numbers you have set.
+
+If you ran `photos.sql` before 27 Nov 2026, run it again: it now limits the photo folder to JPEG, PNG and WebP up to 5 MB.
+
+## Admin access
+
+Neha's admin page is `/admin/` (for example http://localhost:4321/admin/).
+
+1. In Supabase, run `supabase/admin.sql` in the SQL editor (once, after `schema.sql`).
+2. **Authentication > Users > Add user > Create new user**: Neha's email and a password she chooses. Tick "Auto Confirm User".
+3. In the SQL editor, make that account an admin (use her email):
+   ```sql
+   insert into admins (user_id) select id from auth.users where email = 'her@email' on conflict do nothing;
+   ```
+4. Recommended: **Authentication > Sign In / Providers > Email**: turn off "Allow new users to sign up", so nobody else can create an account.
+
+The admin page only works for accounts in the `admins` table; the database refuses everyone else, whatever the page shows.
+
+On a phone, open `/admin/` and use **Add to Home Screen** (iPhone, Safari Share menu) or **Install app** (Android, Chrome menu) so it opens like an app.
+
+To try the design without real data, run `npm run dev` and open http://localhost:4321/admin/?demo, then sign in with any email and password. Nothing is saved.
 
 ## Files
 
 | Path | What it is |
 |---|---|
-| `index.html` | Page structure |
-| `css/styles.css` | All styles (theme colours at the top, taken from the logo) |
-| `js/data.js` | **Edit this to change products, prices, categories, occasions and festival dates** |
-| `js/app.js` | Storefront behaviour: carousel, filters, quick view, enquiry list, custom order form, festival engine |
-| `images/logo.png` | Logo, cropped from the Instagram profile picture (150 px source; replace with the original file when available) |
-| `images/planters/` | 18 planter photos from Instagram (owner's permission noted in the handover pack) |
-| `images/products/` | Other product photos |
+| `src/data/catalogue.js` | **Edit this to change products, prices, stock, word limits, categories, occasions and festival dates.** Moves to Supabase in phase 3 |
+| `src/lib/rules.js` | Business rules shared by every page and the tests: personalisation word limits, hamper stock checks |
+| `src/lib/pictures.js` | Drawn placeholder pictures for products without photos |
+| `src/pages/index.astro` | Home page |
+| `src/pages/products/[slug].astro` | The one template that draws every product page on each visit, e.g. `/products/decoupaged-bottle-vase/` |
+| `src/pages/404.astro` | Page shown for an address that doesn't exist, such as a removed product |
+| `astro.config.mjs` | Astro settings: the Cloudflare adapter and the public address (`SITE_URL`) |
+| `src/layouts/Base.astro` | Page shell: head tags, header, footer |
+| `src/components/` | Header (menus built from the catalogue) and footer with the enquiry list drawer |
+| `src/scripts/core.js` | Browser code for every page: festival bar, menus, enquiry list |
+| `src/scripts/home.js` | Home page: carousel, shop filters, quick view, hamper builder, custom order form |
+| `src/scripts/product.js` | Product page: personalisation and add to enquiry |
+| `src/styles/global.css` | All styles (theme colours at the top, taken from the logo). Tailwind classes also work |
+| `public/images/` | Logo and product photos, served as they are |
+| `tests/` | Tests for `rules.js`, and for the database schema run in an in-memory Postgres |
+| `supabase/schema.sql` | Database tables, rules and access (run once in the SQL editor) |
+| `supabase/hampers.sql` | Ready-made hamper contents and prices kept on enquiries (run after `bases.sql`) |
+| `supabase/hamper-sizes.sql` | Hamper sizes and basket prices, hamper-only chocolates and condiments (run after `hampers.sql`) |
+| `supabase/security.sql` | Limits on enquiry size and rate, and expiry of unconfirmed enquiries (run after `hampers.sql` and `photos.sql`) |
+| `src/lib/security-headers.js`, `src/middleware.js`, `public/_headers` | Security headers on every page (one list; a test keeps `_headers` in step) |
+| `supabase/seed.sql` | The current catalogue as database rows (generated by `npm run seed`) |
+| `src/lib/supabase.js` | Connection to Supabase: loads live products, submits enquiries |
+| `supabase/admin.sql` | Admin list and what admins may change (run once after `schema.sql`) |
+| `src/pages/admin/index.astro`, `src/scripts/admin.js`, `src/styles/admin.css` | Neha's admin panel: home, enquiries, products, made for phones first |
+| `src/lib/admin-demo.js` | Made-up data for trying the admin panel (`/admin/?demo`, dev server only) |
+| `.env.example` | Template for your local `.env` with the Supabase URL and anon key |
+| `docs/requirements.md` | Versioned requirements, delivery plan and change log |
 
 ## Features
 
-- **Festival engine.** The announcement bar, its order-by countdown and the first hero slide follow the next festival in `FESTIVALS` (Christmas, Lunar New Year, Eid, Mother's Day, Diwali). Add `#preview` to the URL to show an admin pill that previews each festival.
-- **Shareable links** for Instagram posts and the bio: `#planters`, `#candles`, `#hampers`, `#hampers-festive`, `#hampers-personal`, `#hampers-corporate`, `#gifts-teacher`, `#gifts-christmas`, `#gifts-housewarming` and so on.
+- **A page per product** at `/products/<name>/`, with its own title and preview image for sharing on Instagram and WhatsApp.
+- **Festival engine.** The announcement bar, its order-by countdown and the first hero slide follow the next festival in `FESTIVALS`. Add `#preview` to the home page URL to show an admin pill that previews each festival.
+- **Shareable links** for Instagram posts and the bio: `/#planters`, `/#candles`, `/#hampers`, `/#hampers-festive`, `/#gifts-teacher`, `/#build` and so on.
 - **Shop filters** by category, hamper type, occasion and price band, with sorting.
-- **Quick view** with personalisation for items marked `pers: true`, and previous and next arrows.
-- **Enquiry list**: same product with the same personalisation becomes one line. Shows a shipping estimate and copies a ready-to-send Instagram DM. Saved in the visitor's browser.
+- **Personalisation** only on products marked `pers`, each with its own label and word limit (for example 50 words on the bottle vase), in quick view and on the product page.
+- **Build your own hamper** (`/#build`): pick 2 to 8 pieces from what is in stock. Stock counts are in the catalogue (`stock`, `hamper`).
+- **Enquiry list**: same product with the same personalisation becomes one line. Shows a shipping estimate and copies a ready-to-send Instagram DM. Saved in the visitor's browser and shared across pages.
 - **Custom order form** in 3 steps, with a reference number and a message to copy.
-- **Stock status** (`in`, `made`, `sold`) shows only where it is known.
 
 ## Placeholders still to replace
 
 - Prices: all are placeholders except the Rose Mummy & Baby Planter Set ($55). Four planters show "Price on enquiry".
-- Drawn pictures stand in for products without photos (everything except planters and the botanical candle).
+- Stock counts, word limits and the hamper fee (see open questions in the requirements doc).
+- Drawn pictures stand in for products without photos.
 - Corporate hampers are suggestions, not yet in her posts.
-- Shipping estimate ($12.95 flat, free over $120) is the prototype's placeholder.
+- Shipping estimate ($12.95 flat, free over $120).
 - Festival dates for 2027 need confirming each year.
+- The domain: until one is chosen the site lives at its `workers.dev` address, set as `SITE_URL` on Cloudflare.
 
-## Next steps (from the website plan)
+## Launching soon page
 
-1. Move to **Astro + Tailwind** so each product gets its own page from one template, then connect **Supabase** (products, festivals, enquiries, `interest_events`) and the admin screens. The `BACKEND HOOK` comments in `js/app.js` mark where the database calls go.
-2. **Stripe Checkout** and Australia Post shipping quotes in January 2027.
-3. Put this folder in a **GitHub repository** and deploy to Cloudflare Pages or Netlify.
+While gaps are still being filled, the live site can show a "launching soon" page instead of the shop (REQ-S10). It has the logo, a short note, a button to Instagram @panigacraftz_neha and an email link to panigacraftz@gmail.com.
+
+- **Turn it on:** in Cloudflare, under **Build > Variables and secrets**, add `PUBLIC_COMING_SOON` = `true`, then **Deployments > Retry** (or push to `main`). The home page becomes the launching-soon page and product links go to it. `/admin/` keeps working, so Neha can add products and photos before launch.
+- **Open the shop:** delete the variable (or set it to `false`) and rebuild.
+- **Try it locally:** add `PUBLIC_COMING_SOON=true` to `.env` and run `npm run dev`. The page is also always at `/coming-soon/`.
+
+## Going live (Cloudflare)
+
+The site runs on Cloudflare Workers (free plan, commercial use allowed). Cloudflare watches the `main` branch on GitHub: every push to `main` builds and publishes the site, usually within two minutes.
+
+Set up once, in the Cloudflare dashboard:
+
+1. **Workers & Pages > Create > Import a repository**, connect GitHub and pick `abhina2211/PanigaCraftz`.
+2. Project name `panigacraftz`, production branch `main`, build command `npm run build`, deploy command `npx wrangler deploy`.
+3. Under **Build > Variables and secrets** (the build ones, because Astro writes these into the pages while building), add:
+   - `PUBLIC_SUPABASE_URL` = `https://fjjbrmvgnlwxpkusixoc.supabase.co`
+   - `PUBLIC_SUPABASE_ANON_KEY` = the anon public key from your `.env` (never the `service_role` key)
+   - `SITE_URL` = the address Cloudflare gives the site, for example `https://panigacraftz.<your-subdomain>.workers.dev` (used for share previews; change it when the domain is chosen)
+   - `NODE_VERSION` = `22`
+   - `PUBLIC_COMING_SOON` = `true` while the shop isn't ready (see "Launching soon page" above)
+4. **Deploy**. Then open the `workers.dev` address on a phone.
+
+Changing a variable takes effect at the next build: use **Deployments > Retry** (or push to `main`).
+
+## Branches
+
+- `main`: what is live.
+- `development`: finished features waiting to go live.
+- `feature/...`: work in progress, branched from `development` and merged back into it.
+
+One feature branch at a time: a new one starts only after the last one is merged into `development`. A branch is ready to merge when it meets the definition of done in [`CONTRIBUTING.md`](CONTRIBUTING.md).

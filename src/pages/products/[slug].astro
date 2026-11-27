@@ -1,0 +1,100 @@
+---
+/* ONE template for every product page. It is rendered on demand: each visit to
+   /products/<slug>/ reads the products from Supabase (or the local catalogue) and
+   draws that product, so a product Neha adds in the admin panel has its page
+   straight away, with current stock and prices, without rebuilding the site. */
+import Base from '../../layouts/Base.astro';
+import { CATEGORIES, HAMPER_TYPES, OCCASIONS, IG } from '../../data/catalogue.js';
+import { persOf, onShop, hamperFromPrice } from '../../lib/rules.js';
+import { imgOf, safeImg } from '../../lib/pictures.js';
+import { fetchLiveProducts } from '../../lib/supabase.js';
+import { COMING_SOON } from '../../lib/launch.js';
+
+export const prerender = false;
+
+/* Before the shop opens, product links go to the launching-soon home page (REQ-S10). */
+if (COMING_SOON) return Astro.redirect('/', 302);
+
+/* This visit's own copy of the products: from Supabase when the keys are set, else the local file. */
+const { products: PRODUCTS, sizes } = await fetchLiveProducts();
+/* The build-your-own hamper's "From" price: its own wrap fee plus the smallest live basket (REQ-H6). */
+const fromPrice = x => '$' + hamperFromPrice(x.price ?? 0, sizes);
+const p = PRODUCTS.find(x => x.slug === Astro.params.slug);
+if (!p || !onShop(p)) return new Response(null, { status: 404 }); /* unknown, hidden or hamper-only (REQ-H12): the 404 page */
+const pers = persOf(p);
+const group = p.ht ? HAMPER_TYPES.find(h => h.id === p.ht) : CATEGORIES.find(c => c.id === p.cat);
+const groupHref = p.ht ? `/#hampers-${p.ht}` : `/#${p.cat}`;
+const price = p.builder ? 'From ' + fromPrice(p) : p.price == null ? 'Price on enquiry' : (p.priceFrom ? 'From $' : '$') + p.price;
+const statusText = { in: 'In stock', made: 'Made to order', sold: 'Sold out' }[p.status];
+const occasions = p.occ.map(id => OCCASIONS.find(o => o.id === id)).filter(Boolean);
+const related = PRODUCTS.filter(x => x.id !== p.id && x.cat === p.cat && onShop(x)).slice(0, 4);
+---
+<Base title={`${p.name} | PanigaCraftz`} description={p.d} image={safeImg(p.img) || undefined}>
+  <section class="band"><div class="wrap">
+    <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Home</a> › <a href={groupHref}>{group?.name}</a> › <span>{p.name}</span></nav>
+
+    <article class="pdp" id="product" data-id={p.id}>
+      <div class="pdp-img">
+        <Fragment set:html={imgOf(p, false)} />
+        {safeImg(p.img2) && <img src={safeImg(p.img2)} alt={`${p.name}, second view`} loading="lazy" />}
+      </div>
+
+      <div class="pdp-body">
+        <span class="cat-l">{group?.name}</span>
+        <h1>{p.name}</h1>
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="price" id="pPrice">{price}</span>
+          <span id="pStatus">{statusText && <span class={`status ${p.status}`}>{statusText}</span>}</span>
+          {p.size && <span class="size">{p.size}</span>}
+        </div>
+        <p class="lead">{p.d}</p>
+        <ul class="pdp-points">
+          <li>Decorated by hand with decoupage, so each piece is unique</li>
+          <li>Gift-wrapped and ready to give</li>
+          <li>Ships Australia-wide, or pick up in Sydney</li>
+        </ul>
+
+        {p.builder ? (
+          <a class="btn" href="/#build" data-build>Start building your hamper</a>
+        ) : (
+          <>
+            {pers && (
+              <div class="pers">
+                <label><span>{pers.label}</span> <span class="hint" id="pPersCount">(optional, up to {pers.words} words)</span>
+                  <textarea id="pPersText" rows={pers.words > 10 ? 4 : 2} aria-describedby="pPersErr" placeholder={pers.words <= 5 ? 'e.g. Ms Lee' : 'Your message'}></textarea></label>
+                <span class="err" id="pPersErr" hidden></span>
+                <div class="preview-name" id="pPersPreview" aria-live="polite"></div>
+                <label>Packaging<select id="pPack"></select></label>
+                <label>Gift note <span class="hint" id="pNoteCount">0 / 150</span><textarea id="pNote" rows="2" maxlength="150" placeholder="Thank you for a wonderful year!"></textarea></label>
+              </div>
+            )}
+            <div class="qact">
+              <div class="qty"><button id="pMinus" aria-label="One fewer">−</button><span id="pQty">1</span><button id="pPlus" aria-label="One more">+</button></div>
+              <button class="btn" id="pAdd" disabled={p.status === 'sold'}>{p.status === 'sold' ? 'Sold out' : 'Add to enquiry'}</button>
+            </div>
+          </>
+        )}
+
+        {occasions.length > 0 && <div class="tags">{occasions.map(o => <a href={`/#gifts-${o.id}`}><span>{o.name}</span></a>)}</div>}
+        {p.ig && <a class="note" href={`https://www.instagram.com/p/${p.ig}/`}>See it on Instagram @{IG}</a>}
+        {p.sample && <p class="note">Draft: price and details are placeholders until Neha confirms them.</p>}
+      </div>
+    </article>
+
+    {related.length > 0 && (
+      <section class="mt-14">
+        <h2>More {group?.name?.toLowerCase()}</h2>
+        <div class="grid">
+          {related.map(r => (
+            <a class="p plink-card" href={`/products/${r.slug}/`}>
+              <div class="img"><Fragment set:html={imgOf(r)} /></div>
+              <div class="body"><h3>{r.name}</h3><span class="price">{r.builder ? 'From ' + fromPrice(r) : r.price == null ? 'Price on enquiry' : (r.priceFrom ? 'From $' : '$') + r.price}</span></div>
+            </a>
+          ))}
+        </div>
+      </section>
+    )}
+  </div></section>
+</Base>
+
+<script>import '../../scripts/product.js';</script>

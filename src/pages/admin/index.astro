@@ -1,0 +1,101 @@
+---
+/* Neha's admin panel (REQ-D5, REQ-A1..A9). Designed for a phone first, after the
+   Shopify mobile app: a bottom tab bar (Home, Enquiries, Products), lists of big
+   tappable cards, one edit screen per item, and a save bar that only appears when
+   something changed. On a computer the tab bar becomes a sidebar.
+
+   This file is only the frame. src/scripts/admin.js signs Neha in and draws each
+   screen. What she can change is enforced by the database (supabase/admin.sql). */
+import '../../styles/global.css';
+import '../../styles/admin.css';
+---
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#6e1f24">
+<title>PanigaCraftz Admin</title>
+<link rel="manifest" href="/admin/manifest.webmanifest">
+<link rel="icon" href="/images/logo.png">
+<link rel="apple-touch-icon" href="/images/logo.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Panigacraftz Admin">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,800&display=swap" rel="stylesheet">
+</head>
+<body class="adm">
+
+<!-- Sign in -->
+<section class="adm-gate" id="signIn" hidden>
+  <img src="/images/logo.png" alt="" width="72" height="72">
+  <h1>PanigaCraftz Admin</h1>
+  <p class="adm-muted">Sign in to manage products, stock and enquiries.</p>
+  <form id="signInForm" class="adm-card adm-form" novalidate>
+    <label>Email<input name="email" type="email" autocomplete="username" inputmode="email" required></label>
+    <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
+    <p class="adm-error" id="signInErr" hidden></p>
+    <button class="adm-btn primary big" type="submit">Sign in</button>
+  </form>
+</section>
+
+<section class="adm-gate" id="noAccess" hidden>
+  <h1>No admin access</h1>
+  <p class="adm-muted">This account isn't set up as an admin. Ask Abhi to add it.</p>
+  <button class="adm-btn big" data-action="sign-out">Sign out</button>
+</section>
+
+<p class="adm-gate adm-error" id="notConnected" hidden>Supabase isn't connected. Add the keys to .env (see README) and rebuild.</p>
+
+<!-- The app: top bar, screen, tab bar -->
+<div class="adm-app" id="app" hidden>
+  <header class="adm-top">
+    <button class="adm-back" id="back" aria-label="Back" hidden><svg viewBox="0 0 24 24" width="24" height="24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <h1 id="title">Home</h1>
+    <a class="adm-topbtn adm-topadd" id="topAdd" href="#/products/new" aria-label="Add a product" hidden>＋ Add</a>
+    <button class="adm-topbtn" id="topAction" hidden></button>
+    <a class="adm-icon" href="/" target="_blank" rel="noopener" aria-label="View website"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+  </header>
+
+  <main class="adm-screen" id="screen" aria-live="polite"></main>
+
+  <!-- Contextual save bar (Shopify pattern): shows only when there are unsaved changes -->
+  <div class="adm-savebar" id="saveBar" hidden>
+    <span>Unsaved changes</span>
+    <button class="adm-btn ghost" data-action="discard">Discard</button>
+    <button class="adm-btn primary" data-action="save">Save</button>
+  </div>
+
+  <!-- Bulk actions: replace the tab bar while products are being selected -->
+  <div class="adm-bulk" id="bulkBar" hidden>
+    <b id="bulkCount">0 selected</b>
+    <div>
+      <button data-bulk="hide">Hide from site</button>
+      <button data-bulk="show">Show on site</button>
+      <button data-bulk="hamper-on">Add to hampers</button>
+      <button data-bulk="hamper-off">Remove from hampers</button>
+      <button data-bulk="stock">Set stock…</button>
+      <button data-bulk="pers">Personalising…</button>
+      <button data-bulk="price">Change price…</button>
+      <button data-bulk="base">Made on base…</button>
+    </div>
+  </div>
+
+  <nav class="adm-tabs" aria-label="Admin sections">
+    <a href="#/home" data-tab="home"><svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg><span>Home</span></a>
+    <a href="#/enquiries" data-tab="enquiries"><svg viewBox="0 0 24 24"><path d="M4 6h16v12H4zM4 7l8 6 8-6"/></svg><span>Enquiries</span><b id="newBadge" hidden></b></a>
+    <a href="#/products" data-tab="products"><svg viewBox="0 0 24 24"><path d="M6 8h12l-1 12H7zM9 8V6a3 3 0 0 1 6 0v2"/></svg><span>Products</span></a>
+    <a href="#/more" data-tab="more"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg><span>More</span></a>
+  </nav>
+</div>
+
+<div class="adm-toast" id="toast" role="status"><span id="toastText"></span><button id="toastUndo" hidden>Undo</button></div>
+<!-- Bottom sheet for quick edits from the list (price, personalisation, bulk values) -->
+<dialog class="adm-sheet" id="sheet" aria-labelledby="sheetTitle"><form method="dialog" id="sheetForm"><div class="adm-grab"></div><div id="sheetBody"></div>
+  <div class="adm-sheet-actions"><button class="adm-btn big" type="button" data-sheet="cancel">Cancel</button><button class="adm-btn primary big" type="submit">Done</button></div></form></dialog>
+<dialog class="adm-dialog" id="confirm"><p id="confirmText"></p><div><button class="adm-btn" value="no" data-close>Keep it</button><button class="adm-btn danger" value="yes" data-close id="confirmYes">Yes</button></div></dialog>
+
+<script>import '../../scripts/admin.js';</script>
+</body>
+</html>

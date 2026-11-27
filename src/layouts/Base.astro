@@ -1,0 +1,39 @@
+---
+/* Page shell shared by every page: head tags, header, footer and drawer.
+   Each page passes its own title and description for search engines and link previews. */
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import '../styles/shop.css'; /* alternative design; the admin panel keeps global.css */
+
+/* bare: no header, footer or enquiry drawer (the coming-soon page). */
+interface Props { title?: string; description?: string; image?: string; bare?: boolean }
+const {
+  title = 'PanigaCraftz',
+  description = 'Handmade decoupage planters, candles, gifts and hampers by Neha Koolwal, Sydney. Order on Instagram @panigacraftz_neha.',
+  image = '/images/planters/CLDJx4NBfqU.jpg',
+  bare = false
+} = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{title}</title>
+<meta name="description" content={description}>
+<link rel="canonical" href={canonical}>
+<meta property="og:title" content={title}>
+<meta property="og:description" content={description}>
+<meta property="og:image" content={new URL(image, Astro.site)}>
+<meta name="theme-color" content="#c0403a">
+<link rel="icon" href="/images/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Figtree:wght@400;600;700&family=Caveat:wght@700&display=swap" rel="stylesheet">
+</head>
+<body>
+{!bare && <Header />}
+<main id="top"><slot /></main>
+{!bare && <Footer />}
+</body>
+</html>
