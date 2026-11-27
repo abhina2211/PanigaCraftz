@@ -8,14 +8,14 @@ Requirement ids and versions refer to `docs/requirements.md`.
 
 | Started | Branch | Component | What it changes | Req. version | Status |
 |---|---|---|---|---|---|
-| 27 Nov 2026 | `feature/coming-soon` | Site, hosting | "Launching soon" page (logo, Instagram link, email link to panigacraftz@gmail.com) shown as the home page when the build variable `PUBLIC_COMING_SOON=true`; product pages redirect to it; admin panel unchanged (REQ-S10). | 1.15 | Open, waiting for review. |
-| 27 Nov 2026 | `feature/footer-credit` | Footer | Small "Website by MetaFinTech Pty Ltd" credit at the bottom of the shared footer on every shop page (REQ-S11). | 1.16 | Open, waiting for review. |
 | 27 Nov 2026 | `feature/alt-design` (7b9949a) | Storefront design | Alternative "Studio journal" storefront: warm paper colours, arched photos, Fraunces/Figtree/Caveat fonts, ordering steps after the hero, new section order. Styles in a new `src/styles/shop.css`; the admin panel keeps `global.css` (REQ-S9). | 1.13 (taken; renumber to 1.17 on merge) | **Trial, not merged.** Waiting for the choice between the two designs. Before merging: copy the hamper size and section styles (`.hb-list`, `.hb-sec`, `.hb-sizes`, `.hb-size-msg`) into `shop.css`, and expect conflicts in `index.astro`, `Footer.astro` and `requirements.md`. |
 
 ## Merged into development
 
 | Merged | Branch (tip) | Merge commit | Component | What it changed | Req. version |
 |---|---|---|---|---|---|
+| 27 Nov 2026 | `feature/footer-credit` (b80de69) | 8f8c32e | Footer | Small "Website by MetaFinTech Pty Ltd" credit at the bottom of the shared footer on every shop page (REQ-S11). | 1.16 |
+| 27 Nov 2026 | `feature/coming-soon` (64e874e) | c552c24 | Site, hosting | "Launching soon" page (logo, Instagram link, email link to panigacraftz@gmail.com) shown as the home page when the build variable `PUBLIC_COMING_SOON=true`; product pages redirect to it; admin panel unchanged (REQ-S10). | 1.15 |
 | 27 Nov 2026 | `feature/hamper-sizes` (9bdf354) | fd343c4 | Hamper builder, rules, database, admin | Hamper sizes Small 3–4, Medium 5–6, Large 7–10 pieces, set by the number of pieces; a basket price per size plus $6 wrapping and card (REQ-H6); builder sections Planters, Candles, Jars, Others (REQ-H11); chocolates and condiments sold only inside hampers (REQ-H12). New `supabase/hamper-sizes.sql`. Merge note: the live hamper sizes are read with the products (`readLive`), so server-drawn product pages use the live basket prices; the security tests were moved to 3-piece hampers. | 1.14 |
 | 27 Nov 2026 | `feature/security-hardening` (d7244de) | 6be6cd5 | Database, hosting, site | Limits on enquiry size and rate, unconfirmed enquiries expire after 7 days (REQ-X1 to X4), security headers (REQ-X5), photo and colour values checked before use (REQ-X6), keys only in a key store (REQ-X7). New `supabase/security.sql`. | 1.13 |
 | 27 Nov 2026 | `feature/brand-contrast` (688979d) | 35a4b61 | Brand, styles | Brand guidelines written down (`docs/brand-guidelines.md`); grey tagline and Sold out label darkened to pass WCAG 4.5:1. | 1.12 |
