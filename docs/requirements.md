@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Document version | 1.16 |
+| Document version | 1.17 |
 | Status | Draft, to review with Neha |
 | Owner | Abhi (for Neha Koolwal, PanigaCraftz) |
 | Last updated | 27 Nov 2026 |
@@ -63,6 +63,7 @@ The gift note on the card stays a separate field limited to 150 characters.
 | REQ-S6 | A feature branch is merged into `development` only when it meets the definition of done in `CONTRIBUTING.md`: builds, tests pass, checked by hand (on a phone for admin changes), Supabase SQL applied and documented, this document updated, no secrets, pushed and reviewed in a pull request. | Agreed (v1.8) |
 | REQ-S7 | Only one feature branch is open at a time: the next one starts from `development` after the previous one is merged. | Agreed (v1.8) |
 | REQ-S8 | The site is hosted on a free public URL that works on a phone, deployed automatically from `main` on GitHub. Product pages are rendered on demand from Supabase on each visit, so new products, stock and prices show without a rebuild; the home and admin pages stay prebuilt. Supabase keys are set on the host, never committed. | Built (v1.11) on Cloudflare Workers free tier, `*.workers.dev` address until a domain is chosen |
+| REQ-S9 | The shop pages use the "Studio journal" design: warm paper background, arched photo frames, Fraunces and Figtree type with Caveat for short handwritten labels, and how-to-order shown straight after the hero. Chosen by Abhi on 27 Nov 2026 over the original pink-and-white design after comparing screenshots. It changes the look only, not the admin panel or any behaviour. See `docs/design-alternative.md`. | Built (v1.17): `src/styles/shop.css`; the admin panel keeps `global.css` |
 | REQ-S10 | Until the shop is ready, the site can show a "launching soon" page instead of the shop: the PanigaCraftz logo, a short note, a link to Instagram @panigacraftz_neha and an email link to panigacraftz@gmail.com. It is switched on with the Cloudflare build variable `PUBLIC_COMING_SOON=true`; product links go to it, and the admin panel keeps working so Neha can add products before launch. Removing the variable and rebuilding opens the shop. | Built (v1.15): `src/pages/coming-soon.astro`, switch in `src/lib/launch.js` |
 | REQ-S11 | The shared footer on every shop page (home, product pages and the not-found page) ends with a small credit line: "Website by MetaFinTech Pty Ltd". The admin panel, which has no shop footer, does not show it. | Built (v1.16) in `src/components/Footer.astro` |
 
@@ -163,6 +164,7 @@ From the security review of 27 Nov 2026. Anyone can send an enquiry, and a hampe
 
 | Version | Date | Change | Asked by |
 |---|---|---|---|
+| 1.17 | 27 Nov 2026 | The "Studio journal" design chosen for the shop (REQ-S9), merged from the trial branch with the hamper sizes, launching-soon page and footer credit carried over. | Abhi |
 | 1.16 | 27 Nov 2026 | Credit line "Website by MetaFinTech Pty Ltd" in the shared footer (REQ-S11). Numbered 1.16 because 1.15 (REQ-S10) is on the open feature/coming-soon branch; feature/alt-design renumbers to 1.17. | Abhi |
 | 1.15 | 27 Nov 2026 | Launching-soon page shown instead of the shop until it is ready (REQ-S10), so the site can go live on Cloudflare while gaps are filled. REQ-S9 is kept for the open feature/alt-design branch, which must renumber its version to 1.17. | Abhi |
 | 1.14 | 27 Nov 2026 | Hamper sizes Small, Medium and Large set by the number of pieces, each with its own basket price, $6 wrapping and card (REQ-H6 changed); sections in the hamper builder (REQ-H11); chocolates and condiments sold only inside hampers (REQ-H12). Numbered 1.14 because 1.12 and 1.13 are on open branches. | Abhi |

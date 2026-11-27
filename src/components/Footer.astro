@@ -3,7 +3,7 @@
 import { SHOP_CATEGORIES, HAMPER_TYPES, IG } from '../data/catalogue.js';
 ---
 <footer class="band"><div class="wrap">
-  <div><h3>PanigaCraftz</h3><p style="margin:0">Handmade decoupage planters, décor, personalised gifts and hampers. Sydney based, shipping Australia-wide (New Zealand on request). Orders by Instagram DM.</p></div>
+  <div><h3>PanigaCraftz</h3><p style="margin:0">Handmade decoupage planters, décor, personalised gifts and hampers. Sydney based, shipping Australia-wide (New Zealand on request). Orders by Instagram DM.</p><span class="hand">Be crafty</span></div>
   <div><h3>Products</h3>{SHOP_CATEGORIES.filter(c => c.id !== 'hampers').map(c => <a href={`/#${c.id}`} data-cat={c.id}>{c.name}</a>)}</div>
   <div><h3>Hampers</h3>{HAMPER_TYPES.map(h => <a href={`/#hampers-${h.id}`} data-ht={h.id}>{h.name}</a>)}<a href="/#build" data-build>Build your own</a></div>
   <div><h3>Help</h3><a href="/#custom">Custom orders</a><a href="/#about">About</a><a href={`https://www.instagram.com/${IG}/`}>Instagram</a></div>

@@ -30,27 +30,37 @@ const festButtons = [['auto', 'Auto (by date)'], ...Object.entries(FESTIVALS).ma
   </div>
 </section>
 
-<section class="band" id="recent"><div class="wrap">
-  <div class="row-head"><div><h2>Recent products</h2><p class="lead">Fresh from Neha's table, the latest pieces she's made.</p></div><a class="btn ghost" href="#shop">View all</a></div>
-  <div class="rail" id="rail"></div>
+<section class="band order-strip" id="how"><div class="wrap">
+  <div><span class="hand">No payment online yet</span><h2>How ordering works</h2><p class="lead">Build a list here, send it to Neha, and she confirms stock, price and delivery with you.</p></div>
+  <div class="steps">
+    <div class="step"><h3>Pick your pieces</h3><p>Use Quick view to check details and add a name, packaging or gift note.</p></div>
+    <div class="step"><h3>Copy your list</h3><p>We turn your enquiry list into a ready-to-send message. Nothing is charged yet.</p></div>
+    <div class="step"><h3>Send it on Instagram</h3><p>Paste it into a DM to @panigacraftz_neha, or send it from the list. We confirm stock, total and timing.</p></div>
+    <div class="step"><h3>Pick up or delivery</h3><p>Collect in Sydney or have it posted Australia-wide. New Zealand on request.</p></div>
+  </div>
 </div></section>
 
-<section class="band" id="categories" style="background:var(--soft)"><div class="wrap">
-  <h2>Shop by category</h2>
+<section class="band" id="categories"><div class="wrap">
+  <span class="hand">Pick a range</span><h2>Shop by category</h2>
   <p class="lead">Seven handmade ranges. Tap one to see what's in it.</p>
   <div class="cats" id="cats">
     {SHOP_CATEGORIES.map(c => (
       <a class="cat" href={`/#${c.id}`} data-cat={c.id}>
-        {catPhoto[c.id] ? <img src={catPhoto[c.id]} alt="" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px" /> : <Fragment set:html={pic(c.id, ...catPic[c.id])} />}
+        <span class="cat-img">{catPhoto[c.id] ? <img src={catPhoto[c.id]} alt="" loading="lazy" /> : <Fragment set:html={pic(c.id, ...catPic[c.id])} />}</span>
         <b>{c.name}</b><small>{c.blurb}</small>
       </a>
     ))}
   </div>
 </div></section>
 
+<section class="band" id="recent" style="background:var(--soft)"><div class="wrap">
+  <div class="row-head"><div><span class="hand">Fresh from the studio</span><h2>New pieces</h2><p class="lead">Fresh from Neha's table, the latest pieces she's made.</p></div><a class="btn ghost" href="#shop">View all</a></div>
+  <div class="rail" id="rail"></div>
+</div></section>
+
 <section class="band occ" id="yearend"><div class="wrap">
   <div>
-    <h2>Year-end gifts for the teachers who helped them grow</h2>
+    <span class="hand">End of year gift guide</span><h2>Year-end gifts for the teachers who helped them grow</h2>
     <p class="lead">Personalised candles, mini planters and pamper hampers, boxed and ready to give. Also perfect for Kris Kringle.</p>
     <p style="margin-top:22px"><button class="btn light" data-occ="teacher">Shop teacher gifts</button></p>
   </div>
@@ -65,7 +75,7 @@ const festButtons = [['auto', 'Auto (by date)'], ...Object.entries(FESTIVALS).ma
 </div></section>
 
 <section class="band" id="shop"><div class="wrap">
-  <div class="row-head"><div><h2 id="shopTitle">All handmade pieces</h2><p class="lead" id="shopLead"></p></div></div>
+  <div class="row-head"><div><span class="hand">The shop</span><h2 id="shopTitle">All handmade pieces</h2><p class="lead" id="shopLead"></p></div></div>
   <div class="chips" id="filter" role="group" aria-label="Filter by category"></div>
   <div class="chips sub" id="subfilter" role="group" aria-label="Filter hampers or occasions"></div>
   <div class="tools">
@@ -76,27 +86,8 @@ const festButtons = [['auto', 'Auto (by date)'], ...Object.entries(FESTIVALS).ma
   <p class="note">Draft: names come from Neha's Instagram posts. Prices are placeholders (except the Rose Mummy &amp; Baby set) and drawn pictures stand in until real photos are added. Corporate hampers are suggestions.</p>
 </div></section>
 
-<section class="band" id="instagram"><div class="wrap">
-  <div class="row-head"><div><h2>From our Instagram</h2><p class="lead">Follow along for new pieces and behind-the-scenes reels.</p></div><a class="btn ghost" href="https://www.instagram.com/panigacraftz_neha/">@panigacraftz_neha</a></div>
-  <div class="igstrip" id="igstrip">
-    {IG_STRIP.map(x => (
-      <a href={igPost(x.id, x.kind)} aria-label="Open Instagram post"><img src={`/images/planters/${x.id}.jpg`} alt="PanigaCraftz planter on Instagram" loading="lazy" />{x.kind === 'reel' && <span>Reel</span>}</a>
-    ))}
-  </div>
-</div></section>
-
-<section class="band" style="background:var(--soft)"><div class="wrap">
-  <h2>How ordering works</h2>
-  <div class="steps">
-    <div class="step"><h3>1. Pick your pieces</h3><p>Use Quick view to check details and add a name, packaging or gift note.</p></div>
-    <div class="step"><h3>2. Copy your list</h3><p>We turn your enquiry list into a ready-to-send message. Nothing is charged yet.</p></div>
-    <div class="step"><h3>3. Send it on Instagram</h3><p>Paste it into a DM to @panigacraftz_neha. We confirm stock, total and timing.</p></div>
-    <div class="step"><h3>4. Pick up or delivery</h3><p>Collect in Sydney or have it posted Australia-wide. New Zealand on request.</p></div>
-  </div>
-</div></section>
-
 <section class="band builder" id="build"><div class="wrap">
-  <div class="row-head"><div><h2>Build your own hamper</h2><p class="lead" id="hbLead">Pick pieces that are in stock right now. The size follows how many you pick, and each size comes in its own basket with wrapping and a card.</p></div></div>
+  <div class="row-head"><div><span class="hand">Make it yours</span><h2>Build your own hamper</h2><p class="lead" id="hbLead">Pick pieces that are in stock right now. The size follows how many you pick, and each size comes in its own basket with wrapping and a card.</p></div></div>
   <div class="hb">
     <div class="hb-list" id="hbItems" aria-label="Pieces you can add"></div>
     <div class="hb-sum" aria-live="polite">
@@ -118,7 +109,7 @@ const festButtons = [['auto', 'Auto (by date)'], ...Object.entries(FESTIVALS).ma
 
 <section class="band custom" id="custom"><div class="wrap">
   <div>
-    <h2>Custom, corporate and bulk orders</h2>
+    <span class="hand">Made for you</span><h2>Custom, corporate and bulk orders</h2>
     <p class="lead">A naming ceremony, table numbers for a party, client gifts for your team, or ten teacher gifts for one class? Three quick steps and we'll come back with a quote.</p>
     <p class="lead">Please allow at least 7 days for custom pieces.</p>
   </div>
@@ -166,11 +157,27 @@ const festButtons = [['auto', 'Auto (by date)'], ...Object.entries(FESTIVALS).ma
   </div>
 </div></section>
 
-<section class="band about" id="about"><div class="wrap">
-  <img src="/images/logo.png" alt="">
-  <h2>Made by hand, at home in Sydney</h2>
-  <p class="lead" style="margin-inline:auto">PanigaCraftz is Neha Koolwal's craft studio. A former lecturer, she started the business six years ago and loves giving colour to plain products. Every piece is decorated by hand using decoupage: paper designs are cut out, layered onto glass, wood, metal or ceramic and sealed with varnish, so no two pieces are exactly the same.</p>
-  <p style="margin-top:22px"><a class="btn" href="https://www.instagram.com/panigacraftz_neha/">Follow @panigacraftz_neha</a></p>
+<section class="band about" id="about"><div class="wrap maker">
+  <div class="maker-pics">
+    <img src="/images/planters/CVEi430hYq_.jpg" alt="A decoupage planter by Neha" loading="lazy">
+    <img src="/images/planters/CYWFXeIFDyK.jpg" alt="Decoupage planters on a table" loading="lazy">
+  </div>
+  <div>
+    <span class="hand">Meet the maker</span><h2>Made by hand, at home in Sydney</h2>
+    <p class="lead">PanigaCraftz is Neha Koolwal's craft studio. A former lecturer, she started the business six years ago and loves giving colour to plain products.</p>
+    <p class="lead">Every piece is decorated by hand using decoupage: paper designs are cut out, layered onto glass, wood, metal or ceramic and sealed with varnish, so no two pieces are exactly the same.</p>
+    <p class="sign">Neha</p>
+    <p style="margin-top:22px"><a class="btn" href="https://www.instagram.com/panigacraftz_neha/">Follow @panigacraftz_neha</a></p>
+  </div>
+</div></section>
+
+<section class="band" id="instagram"><div class="wrap">
+  <div class="row-head"><div><span class="hand">Follow along</span><h2>From our Instagram</h2><p class="lead">Follow along for new pieces and behind-the-scenes reels.</p></div><a class="btn ghost" href="https://www.instagram.com/panigacraftz_neha/">@panigacraftz_neha</a></div>
+  <div class="igstrip" id="igstrip">
+    {IG_STRIP.map(x => (
+      <a href={igPost(x.id, x.kind)} aria-label="Open Instagram post"><img src={`/images/planters/${x.id}.jpg`} alt="PanigaCraftz planter on Instagram" loading="lazy" />{x.kind === 'reel' && <span>Reel</span>}</a>
+    ))}
+  </div>
 </div></section>
 
 <dialog class="qview" id="qview" aria-labelledby="qName">
