@@ -23,6 +23,9 @@
                { label, words }           own label and maximum number of words
              Packaging and a gift note are offered with any personalisable piece.
    builder   true for the build-your-own hamper product (priced by its pieces)
+   pieces    ready-made hampers only: [{ id, qty }] of the pieces inside (REQ-H8). The hamper
+             sells out when a counted piece runs out, and an enquiry holds the pieces' stock.
+             In Supabase: the hamper_pieces table (supabase/hampers.sql).
    occ       occasions it suits (see OCCASIONS)
    fest      festivals it is featured for (keys of FESTIVALS)
    added     ordering for "Recent products": higher = newer
@@ -111,9 +114,24 @@ export const BASES = [
 
 /* What a product shows (REQ-B2): ready-made pieces first ("In stock"), then blanks on
    its base ("Made to order"), otherwise "Sold out". A status Neha set by hand wins.
-   Products with no count and no base show nothing. */
-export function statusFor(p, bases = BASES) {
+   Products with no count and no base show nothing.
+   A ready-made hamper with pieces follows its pieces (REQ-H8): sold out when a counted
+   piece can't cover it, made to order when a piece has to be made on its base. */
+export function statusFor(p, bases = BASES, products = null) {
   if (p.fixedStatus) return p.fixedStatus;
+  if (products && p.pieces && p.pieces.length) {
+    let made = false;
+    for (const it of p.pieces) {
+      const q = products.find(x => x.id === it.id);
+      if (!q) return 'sold';
+      const qBase = q.base && bases.find(b => b.id === q.base);
+      if (typeof q.stock !== 'number' && !qBase) continue; /* not counted: doesn't limit the hamper */
+      const ready = typeof q.stock === 'number' ? q.stock : 0;
+      if (ready + (qBase ? qBase.stock : 0) < it.qty) return 'sold';
+      if (ready < it.qty) made = true;
+    }
+    return made ? 'made' : 'in';
+  }
   const base = p.base && bases.find(b => b.id === p.base);
   if (typeof p.stock === 'number' && p.stock > 0) return 'in';
   if (base && base.stock > 0) return 'made';
@@ -165,12 +183,14 @@ export const PRODUCTS = [
  P({ id:'h1', cat:'hampers', ht:'personal', name:'Teacher pamper hamper', d:'A personalised pamper hamper with a handmade decoupage piece and treats.', price:65, badge:'Year-end', pers:true, occ:['teacher','christmas'], fest:['christmas'], added:36, col:['#f8e4e4','#c0403a'] }),
  P({ id:'h2', cat:'hampers', ht:'personal', name:'Tea lover hamper', d:'A decorated cup with tea. "A little cup of friendship."', price:45, pers:true, occ:['birthday','mothersday'], fest:['eid','mothersday'], added:48, col:['#eef2e6','#6e1f24'] }),
  P({ id:'h3', cat:'hampers', ht:'personal', name:'New baby hamper', d:'To celebrate the arrival of a little one, for baby showers and naming ceremonies.', price:85, pers:true, occ:['baby'], added:46, col:['#e3eaf5','#c0403a'] }),
- P({ id:'h4', cat:'hampers', ht:'festive', name:'Diwali hamper', d:'Decorated tea lights, a treat box and festive touches for Diwali.', price:70, badge:'Festive', pers:true, occ:['diwali'], fest:['diwali'], added:21, col:['#fbe9d6','#c0403a'] }),
- P({ id:'h5', cat:'hampers', ht:'festive', name:'Christmas & Kris Kringle hamper', d:'A chocolate box, botanical candle and mini planter, made for Christmas surprises.', price:60, badge:'Christmas', pers:true, occ:['christmas','teacher'], fest:['christmas'], added:34, col:['#f8e4e4','#6e1f24'] }),
+ P({ id:'h4', cat:'hampers', ht:'festive', name:'Diwali hamper', d:'Decorated tea lights, a treat box and festive touches for Diwali.', price:70, pieces:[{ id:'t3', qty:1 }, { id:'j2', qty:1 }], badge:'Festive', pers:true, occ:['diwali'], fest:['diwali'], added:21, col:['#fbe9d6','#c0403a'] }),
+ P({ id:'h5', cat:'hampers', ht:'festive', name:'Christmas & Kris Kringle hamper', d:'A chocolate box, botanical candle and mini planter, made for Christmas surprises.', price:60, pieces:[{ id:'j2', qty:1 }, { id:'c1', qty:1 }, { id:'p8', qty:1 }], badge:'Christmas', pers:true, occ:['christmas','teacher'], fest:['christmas'], added:34, col:['#f8e4e4','#6e1f24'] }),
  P({ id:'h6', cat:'hampers', ht:'corporate', name:'Build-your-own corporate hamper', d:'Your logo on the card, festival-themed packaging, 10 to 500 boxes. Quoted per order.', price:85, priceFrom:true, badge:'Bulk pricing', pers:true, occ:['corporate','christmas'], fest:['christmas','lunar','diwali'], added:10, col:['#fbefee','#6e1f24'] }),
  P({ id:'h8', cat:'hampers', ht:'personal', builder:true, name:'Build-your-own hamper', d:'Pick the pieces yourself from what is in stock today. We add the basket, wrapping and a card.', price:15, priceFrom:true, badge:'Build your own', occ:['birthday','teacher','christmas','mothersday'], added:35, col:['#fbefee','#c0403a'] }),
  P({ id:'h7', cat:'hampers', ht:'corporate', name:'Staff desk gift set', d:'Pen stand, personalised name candle and a card. Quoted per order.', price:55, priceFrom:true, pers:true, occ:['corporate'], added:9, col:['#f3e6dc','#c0403a'] })
 ];
+/* Ready-made hampers follow their pieces, which only exist once the list above is complete. */
+PRODUCTS.forEach(p => { if (p.pieces) p.status = statusFor(p, BASES, PRODUCTS); });
 
 /* Homepage "From our Instagram" strip (curated, not a live feed). */
 export const IG_STRIP = [

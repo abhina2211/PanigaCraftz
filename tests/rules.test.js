@@ -75,3 +75,18 @@ test('REQ-B3/B4: hampers use ready-made first, then blanks shared between design
     assert.ok(!rules.checkHamper([{ id: 'p11', qty: 3 }, { id: 'p12', qty: 2 }], 1, []).ok);
   } finally { [p11.hamper, p12.hamper, p11.price, p12.price] = saved; }
 });
+
+test('REQ-H8: a ready-made hamper follows the stock of the pieces inside', () => {
+  const xmas = p('h5'); // chocolate box j2, botanical candle c1, mini planter p8 (stock 3)
+  assert.equal(xmas.status, 'in');
+  assert.ok(rules.checkLine({ key: 'x', id: 'h5', qty: 3, opts: {} }, []).ok);
+  assert.ok(!rules.checkLine({ key: 'x', id: 'h5', qty: 4, opts: {} }, []).ok);   // only 3 mini planters
+  // a custom hamper already holding all 3 mini planters leaves none for the Christmas hamper
+  const bag = [{ key: 'a', id: 'h8', qty: 1, opts: { items: [{ id: 'p8', qty: 3 }, { id: 'c1', qty: 1 }] } }];
+  assert.ok(!rules.checkLine({ key: 'x', id: 'h5', qty: 1, opts: {} }, bag).ok);
+  // and the other way round: Christmas hampers in the list hold their pieces for custom hampers
+  const bag2 = [{ key: 'x', id: 'h5', qty: 3, opts: {} }];
+  assert.equal(rules.available('p8', bag2), 0);
+  // hampers without listed contents are not limited
+  assert.ok(rules.checkLine({ key: 'y', id: 'h1', qty: 50, opts: {} }, []).ok);
+});

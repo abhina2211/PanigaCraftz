@@ -31,6 +31,18 @@ export function fromRow(r, bases = BASES) {
   return p;
 }
 
+/* Ready-made hamper contents (REQ-H8): attach the hamper_pieces rows to their hampers,
+   then work out each hamper's status from its pieces. Changes products in place. */
+export function applyHamperPieces(products, rows, bases = BASES) {
+  products.forEach(p => { delete p.pieces; });
+  (rows || []).forEach(r => {
+    const h = products.find(p => p.id === r.hamper_id);
+    if (h) (h.pieces ??= []).push({ id: r.piece_id, qty: r.qty });
+  });
+  products.forEach(p => { if (p.pieces) p.status = statusFor(p, bases, products); });
+  return products;
+}
+
 /* Replace the local catalogue with the live products, in place, so every module that
    imported PRODUCTS (rules, pages, scripts) sees the live data. Returns how it went. */
 let loading = null;
@@ -38,14 +50,16 @@ export function loadLiveProducts() {
   if (!supabase) return Promise.resolve({ source: 'local file' });
   return loading ??= (async () => {
     try {
-      const [{ data, error }, b] = await Promise.all([
+      const [{ data, error }, b, hp] = await Promise.all([
         supabase.from('products').select('*').order('id'),
-        supabase.from('bases').select('*') /* missing until supabase/bases.sql is run: then no bases */
+        supabase.from('bases').select('*'), /* missing until supabase/bases.sql is run: then no bases */
+        supabase.from('hamper_pieces').select('*') /* missing until supabase/hampers.sql is run: then no contents */
       ]);
       if (error) throw error;
       if (!data.length) return { source: 'local file', error: 'no products in the database yet' };
       BASES.splice(0, BASES.length, ...(b.error ? [] : b.data.map(fromBaseRow)));
       PRODUCTS.splice(0, PRODUCTS.length, ...data.map(r => fromRow(r, BASES)));
+      applyHamperPieces(PRODUCTS, hp.error ? [] : hp.data, BASES);
       return { source: 'Supabase', count: data.length };
     } catch (e) {
       console.warn('[PanigaCraftz] Using the local catalogue; Supabase failed:', e.message || e);
