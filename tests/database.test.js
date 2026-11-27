@@ -18,8 +18,11 @@ before(async () => {
   await db.exec(`create role anon; create role authenticated;
     create schema auth; create table auth.users (id uuid primary key, email text);
     create function auth.uid() returns uuid language sql stable as $$ select null::uuid $$;`);
-  // Same order as the README: schema, seed, admin, bases, hampers. Each must be safe to run twice.
-  for (const f of ['schema.sql', 'seed.sql', 'admin.sql', 'bases.sql', 'hampers.sql', 'schema.sql', 'admin.sql', 'bases.sql', 'hampers.sql']) await db.exec(sql(f));
+  // Same order as the README: schema, seed, admin, bases, hampers, security. Each must be safe to run twice.
+  for (const f of ['schema.sql', 'seed.sql', 'admin.sql', 'bases.sql', 'hampers.sql', 'security.sql',
+                   'schema.sql', 'admin.sql', 'bases.sql', 'hampers.sql', 'security.sql']) await db.exec(sql(f));
+  // The tests send many enquiries from one address; the rate limits get their own test below.
+  await db.exec(`update enquiry_limits set per_email_per_hour = 1000, per_hour = 1000`);
 });
 
 test('seed loads every product', async () => {
@@ -155,4 +158,68 @@ test('REQ-H8: running hampers.sql again keeps contents Neha has changed', async 
   await db.exec(sql('hampers.sql'));
   const { rows } = await db.query(`select piece_id from hamper_pieces where hamper_id = 'h4'`);
   assert.deepEqual(rows.map(r => r.piece_id), ['t3']);
+});
+
+/* ---------- limits against fake enquiries (supabase/security.sql) ---------- */
+const submitAs = (email, lines) => db.query('select submit_enquiry($1) as ref', [JSON.stringify({ name: 'Test Buyer', email, postcode: '2000', lines })]);
+const cancel = ref => db.query(`update enquiries set status = 'cancelled' where ref = $1`, [ref]);
+
+test('REQ-X1: one enquiry can only hold so much', async () => {
+  await db.exec(`update enquiry_limits set max_lines = 3, max_hamper_qty = 2, max_hamper_units = 5`);
+  try {
+    const before = { c1: await stock('c1'), j2: await stock('j2') };
+    await assert.rejects(submit([1, 2, 3, 4].map(() => ({ id: 'd1', qty: 1, opts: {} }))), /at most 3 items/);
+    await assert.rejects(submit([{ id: 'h8', qty: 3, opts: { items: [{ id: 'c1', qty: 1 }, { id: 'j2', qty: 1 }] } }]), /at most 2 at a time/);
+    // 2 hampers x 2 pieces = 4 pieces: fine. Adding a second line of 2 more goes over 5.
+    const { rows } = await submit([{ id: 'h8', qty: 2, opts: { items: [{ id: 'c1', qty: 1 }, { id: 'j2', qty: 1 }] } }]);
+    await cancel(rows[0].ref);
+    await assert.rejects(submit([
+      { id: 'h8', qty: 2, opts: { items: [{ id: 'c1', qty: 1 }, { id: 'j2', qty: 1 }] } },
+      { id: 'h8', qty: 1, opts: { items: [{ id: 'c1', qty: 1 }, { id: 'j2', qty: 1 }] } }
+    ]), /at most 5 hamper pieces/);
+    // a ready-made hamper counts its listed pieces too (h5 has 3)
+    await assert.rejects(submit([{ id: 'h5', qty: 2, opts: {} }]), /at most 5 hamper pieces/);
+    assert.deepEqual({ c1: await stock('c1'), j2: await stock('j2') }, before, 'refused enquiries hold nothing');
+  } finally {
+    await db.exec(`update enquiry_limits set max_lines = 20, max_hamper_qty = 10, max_hamper_units = 40`);
+  }
+});
+
+test('REQ-X2: enquiries per email address and per hour are limited', async () => {
+  await db.exec(`update enquiry_limits set per_email_per_hour = 2, per_hour = 1000`);
+  try {
+    await submitAs('Rate@Example.com', [{ id: 'd1', qty: 1, opts: {} }]);
+    await submitAs('rate@example.com', [{ id: 'd1', qty: 1, opts: {} }]);
+    await assert.rejects(submitAs('RATE@example.com', [{ id: 'd1', qty: 1, opts: {} }]), /Too many enquiries from this email/);
+    const { rows } = await db.query(`select count(*)::int as n from enquiries where created_at > now() - interval '1 hour'`);
+    await db.exec(`update enquiry_limits set per_email_per_hour = 1000, per_hour = ${rows[0].n}`);
+    await assert.rejects(submitAs('someone.new@example.com', [{ id: 'd1', qty: 1, opts: {} }]), /a lot of enquiries in the last hour/);
+  } finally {
+    await db.exec(`update enquiry_limits set per_email_per_hour = 1000, per_hour = 1000`);
+  }
+});
+
+test('REQ-X3: enquiries nobody confirmed are cancelled after hold_days and give their stock back', async () => {
+  const before = await stock('c1');
+  const old = await submit([{ id: 'h8', qty: 1, opts: { items: [{ id: 'c1', qty: 1 }, { id: 'j2', qty: 1 }] } }]);
+  const confirmed = await submit([{ id: 'h8', qty: 1, opts: { items: [{ id: 'c1', qty: 1 }, { id: 'j2', qty: 1 }] } }]);
+  const fresh = await submit([{ id: 'h8', qty: 1, opts: { items: [{ id: 'c1', qty: 1 }, { id: 'j2', qty: 1 }] } }]);
+  await db.query(`update enquiries set created_at = now() - interval '8 days' where ref in ($1, $2)`, [old.rows[0].ref, confirmed.rows[0].ref]);
+  await db.query(`update enquiries set status = 'confirmed' where ref = $1`, [confirmed.rows[0].ref]);
+  assert.equal(await stock('c1'), before - 3);
+  // cancel every other "new" enquiry older than 7 days left by earlier tests, then check ours
+  await db.query('select expire_stale_enquiries()');
+  const status = async ref => (await db.query('select status from enquiries where ref = $1', [ref])).rows[0].status;
+  assert.equal(await status(old.rows[0].ref), 'cancelled');
+  assert.equal(await status(confirmed.rows[0].ref), 'confirmed', 'confirmed enquiries are kept');
+  assert.equal(await status(fresh.rows[0].ref), 'new', 'recent enquiries are kept');
+  assert.equal(await stock('c1'), before - 2, 'the expired enquiry gave its piece back');
+  await cancel(confirmed.rows[0].ref); await cancel(fresh.rows[0].ref);
+});
+
+test('REQ-X4: the website cannot read or change the limits, or run the expiry itself', async () => {
+  const { rows } = await db.query(`select has_function_privilege('anon', 'expire_stale_enquiries()', 'execute') as run,
+    (select relrowsecurity from pg_class where relname = 'enquiry_limits') as rls,
+    (select count(*)::int from pg_policies where tablename = 'enquiry_limits') as policies`);
+  assert.deepEqual(rows[0], { run: false, rls: true, policies: 0 });
 });

@@ -2,9 +2,12 @@
 -- admin.sql. Safe to run again.
 -- Creates a public "product-photos" storage folder: anyone can view the photos (they
 -- appear on the website), only admins can upload or replace them.
-insert into storage.buckets (id, name, public)
-values ('product-photos', 'product-photos', true)
-on conflict (id) do nothing;
+-- Only photos (JPEG, PNG, WebP) up to 5 MB, so nothing that can run script (SVG, HTML)
+-- can be stored here. The admin panel always uploads a shrunk JPEG.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('product-photos', 'product-photos', true, 5242880, array['image/jpeg', 'image/png', 'image/webp'])
+on conflict (id) do update
+  set file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;
 
 drop policy if exists "admins upload product photos" on storage.objects;
 create policy "admins upload product photos" on storage.objects for insert to authenticated

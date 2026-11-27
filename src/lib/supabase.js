@@ -43,32 +43,53 @@ export function applyHamperPieces(products, rows, bases = BASES) {
   return products;
 }
 
-/* Replace the local catalogue with the live products, in place, so every module that
-   imported PRODUCTS (rules, pages, scripts) sees the live data. Returns how it went. */
+/* Read the live products, bases and hamper contents into new lists. Throws on failure;
+   returns null when the database has no products yet. */
+async function readLive() {
+  const [{ data, error }, b, hp] = await Promise.all([
+    supabase.from('products').select('*').order('id'),
+    supabase.from('bases').select('*'), /* missing until supabase/bases.sql is run: then no bases */
+    supabase.from('hamper_pieces').select('*') /* missing until supabase/hampers.sql is run: then no contents */
+  ]);
+  if (error) throw error;
+  if (!data.length) return null;
+  const bases = b.error ? [] : b.data.map(fromBaseRow);
+  const products = applyHamperPieces(data.map(r => fromRow(r, bases)), hp.error ? [] : hp.data, bases);
+  return { products, bases };
+}
+
+/* In the browser: replace the local catalogue with the live products, in place, so every
+   module that imported PRODUCTS (rules, pages, scripts) sees the live data. Loads once
+   per page. Returns how it went. */
 let loading = null;
-/* In the browser the products load once per page. On the server (on-demand product
-   pages) pass { fresh: true } so every visit sees the current stock and prices. */
-export function loadLiveProducts({ fresh = false } = {}) {
+export function loadLiveProducts() {
   if (!supabase) return Promise.resolve({ source: 'local file' });
-  if (fresh) loading = null;
   return loading ??= (async () => {
     try {
-      const [{ data, error }, b, hp] = await Promise.all([
-        supabase.from('products').select('*').order('id'),
-        supabase.from('bases').select('*'), /* missing until supabase/bases.sql is run: then no bases */
-        supabase.from('hamper_pieces').select('*') /* missing until supabase/hampers.sql is run: then no contents */
-      ]);
-      if (error) throw error;
-      if (!data.length) return { source: 'local file', error: 'no products in the database yet' };
-      BASES.splice(0, BASES.length, ...(b.error ? [] : b.data.map(fromBaseRow)));
-      PRODUCTS.splice(0, PRODUCTS.length, ...data.map(r => fromRow(r, BASES)));
-      applyHamperPieces(PRODUCTS, hp.error ? [] : hp.data, BASES);
-      return { source: 'Supabase', count: data.length };
+      const live = await readLive();
+      if (!live) return { source: 'local file', error: 'no products in the database yet' };
+      BASES.splice(0, BASES.length, ...live.bases);
+      PRODUCTS.splice(0, PRODUCTS.length, ...live.products);
+      return { source: 'Supabase', count: live.products.length };
     } catch (e) {
       console.warn('[PanigaCraftz] Using the local catalogue; Supabase failed:', e.message || e);
       return { source: 'local file', error: e.message || String(e) };
     }
   })();
+}
+
+/* On the server (on-demand product pages): fresh lists for this one visit. The shared
+   PRODUCTS list is left alone, so two visits at the same moment can't mix each other's
+   data. Falls back to the local catalogue. */
+export async function fetchLiveProducts() {
+  if (!supabase) return { products: PRODUCTS, bases: BASES, source: 'local file' };
+  try {
+    const live = await readLive();
+    return live ? { ...live, source: 'Supabase' } : { products: PRODUCTS, bases: BASES, source: 'local file' };
+  } catch (e) {
+    console.warn('[PanigaCraftz] Using the local catalogue; Supabase failed:', e.message || e);
+    return { products: PRODUCTS, bases: BASES, source: 'local file', error: e.message || String(e) };
+  }
 }
 
 /* BACKEND HOOK done: save an enquiry list through the database function, which
