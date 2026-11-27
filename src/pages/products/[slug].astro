@@ -8,8 +8,12 @@ import { CATEGORIES, HAMPER_TYPES, OCCASIONS, IG } from '../../data/catalogue.js
 import { persOf, onShop, hamperFromPrice } from '../../lib/rules.js';
 import { imgOf, safeImg } from '../../lib/pictures.js';
 import { fetchLiveProducts } from '../../lib/supabase.js';
+import { COMING_SOON } from '../../lib/launch.js';
 
 export const prerender = false;
+
+/* Before the shop opens, product links go to the launching-soon home page (REQ-S10). */
+if (COMING_SOON) return Astro.redirect('/', 302);
 
 /* This visit's own copy of the products: from Supabase when the keys are set, else the local file. */
 const { products: PRODUCTS, sizes } = await fetchLiveProducts();
